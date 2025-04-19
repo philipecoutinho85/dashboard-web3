@@ -26,12 +26,14 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-4">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
-        <h1 className="text-3xl font-extrabold text-indigo-700 mb-6">HashSign</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fff1f0] to-white px-4">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
+        <h1 className="text-3xl font-extrabold text-[#ff385c] mb-6">HashSign</h1>
 
         {erro && (
-          <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-sm">{erro}</div>
+          <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+            {erro}
+          </div>
         )}
 
         <input
@@ -39,7 +41,7 @@ export default function Login() {
           placeholder="E-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded"
+          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ff385c]"
         />
 
         <input
@@ -47,7 +49,7 @@ export default function Login() {
           placeholder="Senha"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
-          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded"
+          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ff385c]"
         />
 
         <button
@@ -56,14 +58,14 @@ export default function Login() {
           className={`w-full py-3 rounded-lg transition font-semibold ${
             loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              : 'bg-[#ff385c] hover:bg-[#e03050] text-white'
           }`}
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
 
         <p className="mt-6 text-xs text-gray-400">
-          Desenvolvido por <span className="font-semibold text-indigo-600">Philipe Coutinho</span>
+          Desenvolvido por <span className="font-semibold text-[#ff385c]">Philipe Coutinho</span>
         </p>
       </div>
     </div>
