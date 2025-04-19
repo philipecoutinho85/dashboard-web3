@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { auth } from '@/firebase';
-import Header from '@/components/Header'; // ✅ novo
+import Header from '@/components/Header';
 
 export default function Explorer() {
   const [docs, setDocs] = useState([]);
@@ -32,9 +32,9 @@ export default function Explorer() {
   return (
     <div className="min-h-screen bg-[#f7f7f7] py-12 px-6 font-sans">
       <div className="max-w-5xl mx-auto">
-        <Header /> {/* ✅ Cabeçalho com botões */}
+        <Header />
 
-        <h1 className="text-3xl font-bold text-gray-800 my-8 text-center">
+        <h1 className="text-3xl font-bold text-black my-8 text-center">
           🗂️ Seus Documentos Assinados
         </h1>
 
@@ -43,7 +43,7 @@ export default function Explorer() {
           placeholder="🔍 Buscar por nome ou hash..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full max-w-lg mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          className="w-full max-w-lg mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#ff385c] text-sm"
         />
 
         {filtered.length === 0 ? (
@@ -56,7 +56,7 @@ export default function Explorer() {
                 className="bg-white border border-gray-200 rounded-xl shadow hover:shadow-md transition duration-200 p-5 flex flex-col justify-between"
               >
                 <div>
-                  <h2 className="text-lg font-semibold text-indigo-700 truncate">
+                  <h2 className="text-lg font-semibold text-[#ff385c] truncate">
                     📄 {doc.name}
                   </h2>
                   <p className="text-sm text-gray-600 mt-2">
@@ -86,7 +86,7 @@ export default function Explorer() {
                   )}
                   <Link
                     to={`/validar/${doc.hash}`}
-                    className="text-indigo-600 text-sm hover:underline font-medium"
+                    className="text-[#ff385c] text-sm hover:underline font-medium"
                   >
                     🔍 Verificar Assinatura
                   </Link>
