@@ -1,114 +1,70 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import DocumentUpload from '@/components/DocumentUpload';
+import DocumentList from '@/components/DocumentList';
 
-export default function Explorer() {
+export default function Dashboard() {
   const [docs, setDocs] = useState([]);
-  const [query, setQuery] = useState('');
-  const [filtered, setFiltered] = useState([]);
-
-  const uid = auth.currentUser?.uid;
   const navigate = useNavigate();
+  const user = auth.currentUser;
 
   useEffect(() => {
-    if (uid) {
-      const allDocs = JSON.parse(localStorage.getItem('hashsign_docs_by_user') || '{}');
-      const userDocs = allDocs[uid] || [];
-      setDocs(userDocs);
-      setFiltered(userDocs);
-    }
-  }, [uid]);
+    const userId = user?.uid;
+    if (!userId) return;
 
-  useEffect(() => {
-    const term = query.toLowerCase();
-    const filteredDocs = docs.filter(
-      (doc) =>
-        doc.name.toLowerCase().includes(term) ||
-        doc.hash.toLowerCase().includes(term)
-    );
-    setFiltered(filteredDocs);
-  }, [query, docs]);
+    const saved = localStorage.getItem(`hashsign_docs_${userId}`);
+    if (saved) setDocs(JSON.parse(saved));
+  }, [user]);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/login');
+  };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7] py-12 px-6 font-sans">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">
-            🗂️ Seus Documentos Assinados
-          </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg shadow"
+    <div className="min-h-screen bg-[#f7f7f7] py-10 px-6 font-sans">
+      <div className="max-w-6xl mx-auto">
+        {/* Cabeçalho */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-indigo-700">HashSign</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Bem-vindo, <span className="font-semibold">{user?.email}</span>
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/explorer"
+              className="text-sm bg-white border border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg shadow hover:bg-indigo-50"
             >
-              🏠 Dashboard
-            </button>
+              🌐 Explorer Público
+            </Link>
             <button
-              onClick={() => navigate('/login')}
-              className="bg-gray-300 hover:bg-gray-400 text-sm px-4 py-2 rounded-lg shadow"
+              onClick={handleLogout}
+              className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow"
             >
-              🔐 Login
+              Sair
             </button>
           </div>
-        </div>
+        </header>
 
-        <input
-          type="text"
-          placeholder="🔍 Buscar por nome ou hash..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full max-w-lg mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-        />
+        {/* Upload e Assinatura */}
+        <section className="mb-12 bg-white p-6 rounded-xl shadow">
+          <DocumentUpload docs={docs} setDocs={setDocs} />
+        </section>
 
-        {filtered.length === 0 ? (
-          <p className="text-center text-gray-500">Nenhum documento encontrado.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((doc, index) => (
-              <div
-                key={index}
-                className="bg-white border border-gray-200 rounded-xl shadow hover:shadow-md transition duration-200 p-5 flex flex-col justify-between"
-              >
-                <div>
-                  <h2 className="text-lg font-semibold text-indigo-700 truncate">
-                    📄 {doc.name}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-2">
-                    <strong>Hash:</strong> {doc.hash.slice(0, 10)}...
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    <strong>Assinaturas:</strong> {doc.signatures?.length || 0}
-                  </p>
-
-                  {doc.signatures?.map((sig, i) => (
-                    <div key={i} className="text-xs text-gray-500 mt-1 ml-2">
-                      • {sig.wallet.slice(0, 6)}... — {sig.signedAt}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 flex flex-col gap-2">
-                  {doc.ipfsUrl && (
-                    <a
-                      href={doc.ipfsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      🌐 Ver no IPFS
-                    </a>
-                  )}
-                  <Link
-                    to={`/validar/${doc.hash}`}
-                    className="text-indigo-600 text-sm hover:underline font-medium"
-                  >
-                    🔍 Verificar Assinatura
-                  </Link>
-                </div>
-              </div>
-            ))}
+        {/* Lista de Documentos */}
+        <section>
+          <h2 className="text-xl font-semibold text-indigo-700 mb-4 flex items-center gap-2">
+            📁 Meus Documentos
+          </h2>
+          <div className="bg-white p-6 rounded-xl shadow">
+            <DocumentList docs={docs} />
           </div>
-        )}
+        </section>
       </div>
     </div>
   );
