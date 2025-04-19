@@ -114,7 +114,9 @@ export default function DocumentUpload({ docs, setDocs }) {
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-6 mb-10">
-      <h2 className="text-xl font-bold text-[#ff385c] mb-6 flex items-center gap-2">📝 Assinatura de Documentos</h2>
+      <h2 className="text-xl font-bold text-black mb-6 flex items-center gap-2">
+        📝 Assinatura de Documentos
+      </h2>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <button
