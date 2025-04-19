@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
 import DocumentUpload from '@/components/DocumentUpload';
 import DocumentList from '@/components/DocumentList';
-import Header from '@/components/Header'; // ✅ Importação do novo Header
+import Header from '@/components/Header'; // ✅ novo componente
 
 export default function Dashboard() {
   const [docs, setDocs] = useState([]);
-  const navigate = useNavigate();
   const user = auth.currentUser;
 
   useEffect(() => {
@@ -21,11 +19,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* ✅ Novo cabeçalho global */}
-        <Header />
+        <Header /> {/* ✅ Header global com navegação */}
 
         {/* Upload e Assinatura */}
-        <section className="mb-12 mt-8">
+        <section className="mb-12">
           <DocumentUpload docs={docs} setDocs={setDocs} />
         </section>
 
