@@ -9,7 +9,13 @@ const handleSign = async (index) => {
   const signer = await provider.getSigner();
 
   const message = `Assinatura do documento ${doc.name} com hash ${doc.hash}`;
-  const signature = await signer.signMessage(message);
+  let signature;
+  try {
+    signature = await signer.signMessage(message);
+  } catch (err) {
+    alert('Erro ao assinar o documento. Verifique sua carteira.');
+    return;
+  }
 
   const timestamp = new Date().toLocaleString();
   const dateStamp = new Date().toISOString().split("T")[0];
@@ -18,7 +24,7 @@ const handleSign = async (index) => {
 
   const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl);
   const pdf = new jsPDF();
-  pdf.text(`Documento: ${doc.name}`, 10, 20);
+  pdf.text(`Documento: ${doc.name}`, 10, 20, { maxWidth: 180 });
   pdf.text(`Hash: ${doc.hash}`, 10, 30);
   pdf.text(`Carteira que assinou: ${walletAddress}`, 10, 40);
   pdf.text(`Data: ${timestamp}`, 10, 50);
@@ -53,13 +59,11 @@ const handleSign = async (index) => {
 
   setDocs(updatedDocs);
 
-  // 🔒 Salva para o usuário logado
   const uid = auth.currentUser?.uid;
   if (uid) {
     localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
   }
 
-  // 🌍 Salva também no Explorer (hashsign_docs_by_user)
   const allDocs = JSON.parse(localStorage.getItem('hashsign_docs_by_user') || '{}');
   allDocs[uid] = updatedDocs;
   localStorage.setItem('hashsign_docs_by_user', JSON.stringify(allDocs));
