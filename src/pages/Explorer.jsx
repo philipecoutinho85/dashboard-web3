@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { auth } from '@/firebase';
+import Header from '@/components/Header'; // ✅ Importação do cabeçalho global
 
 export default function Explorer() {
   const [docs, setDocs] = useState([]);
@@ -31,6 +32,8 @@ export default function Explorer() {
   return (
     <div className="min-h-screen bg-[#f7f7f7] py-12 px-6 font-sans">
       <div className="max-w-5xl mx-auto">
+        <Header /> {/* ✅ Cabeçalho com navegação global */}
+
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
           🗂️ Seus Documentos Assinados
         </h1>
