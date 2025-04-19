@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -13,34 +13,24 @@ export default function Header() {
   };
 
   return (
-    <header className="flex flex-col sm:flex-row justify-between items-center bg-white border border-gray-200 rounded-xl shadow-md p-4 mb-8">
-      <div className="mb-2 sm:mb-0">
-        <h1 className="text-xl font-bold text-indigo-700">HashSign</h1>
-        {user?.email && (
-          <p className="text-sm text-gray-500">Bem-vindo, {user.email}</p>
-        )}
+    <header className="flex justify-between items-center mb-10 border rounded-xl bg-white px-6 py-3 shadow">
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: '#ff385c' }}>HashSign</h1>
+        <p className="text-sm text-gray-600">
+          Bem-vindo, <span className="font-semibold">{user?.email}</span>
+        </p>
       </div>
 
-      <nav className="flex flex-wrap gap-3">
-        <Link
-          to="/dashboard"
-          className="text-sm text-indigo-700 font-medium hover:underline"
-        >
-          🏠 Dashboard
-        </Link>
-        <Link
-          to="/explorer"
-          className="text-sm text-indigo-700 font-medium hover:underline"
-        >
-          🗂️ Explorer
-        </Link>
+      <div className="flex items-center gap-6 text-sm">
+        <Link to="/dashboard" className="text-black hover:underline">🏠 Dashboard</Link>
+        <Link to="/explorer" className="text-black hover:underline">📁 Explorer</Link>
         <button
           onClick={handleLogout}
-          className="text-sm text-red-600 hover:underline font-medium"
+          className="text-red-600 hover:text-red-800 font-medium"
         >
           🚪 Sair
         </button>
-      </nav>
+      </div>
     </header>
   );
 }
