@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -24,46 +24,38 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7] py-10 px-6 font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Cabeçalho */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+        <header className="flex justify-between items-center mb-10 bg-black py-4 px-6 rounded-xl shadow-md">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-indigo-700">HashSign</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Bem-vindo, <span className="font-semibold">{user?.email}</span>
+            <h1 className="text-3xl font-bold text-white">HashSign</h1>
+            <p className="text-sm text-gray-300 mt-1">
+              Bem-vindo, <span className="font-semibold text-white">{user?.email}</span>
             </p>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              to="/explorer"
-              className="text-sm bg-white border border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg shadow hover:bg-indigo-50"
-            >
-              🌐 Explorer Público
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow"
-            >
-              Sair
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="bg-[#ff385c] hover:bg-[#e0334e] text-white px-5 py-2 rounded-lg shadow-sm"
+          >
+            Sair
+          </button>
         </header>
 
         {/* Upload e Assinatura */}
-        <section className="mb-12 bg-white p-6 rounded-xl shadow">
+        <section className="mb-12">
+          <h2 className="text-xl font-semibold text-[#ff385c] mb-4 flex items-center gap-2">
+            📝 Assinatura de Documentos
+          </h2>
           <DocumentUpload docs={docs} setDocs={setDocs} />
         </section>
 
         {/* Lista de Documentos */}
         <section>
-          <h2 className="text-xl font-semibold text-indigo-700 mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-black mb-4 flex items-center gap-2">
             📁 Meus Documentos
           </h2>
-          <div className="bg-white p-6 rounded-xl shadow">
-            <DocumentList docs={docs} />
-          </div>
+          <DocumentList docs={docs} />
         </section>
       </div>
     </div>
