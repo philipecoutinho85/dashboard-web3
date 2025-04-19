@@ -27,10 +27,12 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <header className="flex justify-between items-center mb-10 border rounded-xl bg-white px-6 py-3 shadow">
+        <header className="flex justify-between items-center mb-10 border rounded-xl bg-white px-6 py-3 shadow-sm">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: '#ff385c' }}>HashSign</h1>
-            <p className="text-sm text-gray-600">Bem-vindo, <span className="font-semibold">{user?.email}</span></p>
+            <p className="text-sm text-gray-600">
+              Bem-vindo, <span className="font-semibold">{user?.email}</span>
+            </p>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <Link to="/dashboard" className="text-black hover:underline">🏠 Dashboard</Link>
@@ -46,13 +48,14 @@ export default function Dashboard() {
 
         {/* Upload e Assinatura */}
         <section className="mb-12">
-          <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">📝 Assinatura de Documentos</h2>
           <DocumentUpload docs={docs} setDocs={setDocs} />
         </section>
 
         {/* Lista de Documentos */}
         <section>
-          <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">📁 Meus Documentos</h2>
+          <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">
+            📁 Meus Documentos
+          </h2>
           <DocumentList docs={docs} />
         </section>
       </div>
