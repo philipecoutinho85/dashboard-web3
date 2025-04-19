@@ -11,71 +11,83 @@ export default function Explorer() {
 
   useEffect(() => {
     if (uid) {
-      const stored = JSON.parse(localStorage.getItem('hashsign_docs_by_user') || '{}');
-      const userDocs = stored[uid] || [];
+      const allDocs = JSON.parse(localStorage.getItem('hashsign_docs_by_user') || '{}');
+      const userDocs = allDocs[uid] || [];
       setDocs(userDocs);
       setFiltered(userDocs);
     }
   }, [uid]);
 
   useEffect(() => {
-    const search = query.toLowerCase();
-    const result = docs.filter(
+    const term = query.toLowerCase();
+    const filteredDocs = docs.filter(
       (doc) =>
-        doc.name.toLowerCase().includes(search) ||
-        doc.hash.toLowerCase().includes(search)
+        doc.name.toLowerCase().includes(term) ||
+        doc.hash.toLowerCase().includes(term)
     );
-    setFiltered(result);
+    setFiltered(filteredDocs);
   }, [query, docs]);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4 font-sans">
-      <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl p-8">
-        <h1 className="text-2xl font-bold text-indigo-700 mb-6 text-center">
-          📂 Meus Documentos Assinados
+    <div className="min-h-screen bg-[#f7f7f7] py-12 px-6 font-sans">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+          🗂️ Seus Documentos Assinados
         </h1>
 
         <input
           type="text"
+          placeholder="🔍 Buscar por nome ou hash..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="🔍 Buscar por nome ou hash..."
-          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+          className="w-full max-w-lg mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
         />
 
         {filtered.length === 0 ? (
           <p className="text-center text-gray-500">Nenhum documento encontrado.</p>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((doc, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                <p className="text-sm text-gray-700"><strong>📄 Nome:</strong> {doc.name}</p>
-                <p className="text-sm text-gray-700"><strong>🔑 Hash:</strong> {doc.hash}</p>
-                <p className="text-sm text-gray-700"><strong>✍️ Assinaturas:</strong> {doc.signatures?.length || 0}</p>
+              <div
+                key={index}
+                className="bg-white border border-gray-200 rounded-xl shadow hover:shadow-md transition duration-200 p-5 flex flex-col justify-between"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-indigo-700 truncate">
+                    📄 {doc.name}
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-2">
+                    <strong>Hash:</strong> {doc.hash.slice(0, 10)}...
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <strong>Assinaturas:</strong> {doc.signatures?.length || 0}
+                  </p>
 
-                {doc.signatures?.map((sig, i) => (
-                  <div key={i} className="text-xs text-gray-600 ml-3 mt-1">
-                    {i + 1}. {sig.wallet.slice(0, 8)}... — {sig.signedAt}
-                  </div>
-                ))}
+                  {doc.signatures?.map((sig, i) => (
+                    <div key={i} className="text-xs text-gray-500 mt-1 ml-2">
+                      • {sig.wallet.slice(0, 6)}... — {sig.signedAt}
+                    </div>
+                  ))}
+                </div>
 
-                {doc.ipfsUrl && (
-                  <a
-                    href={doc.ipfsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 hover:underline text-sm block mt-2"
+                <div className="mt-4 flex flex-col gap-2">
+                  {doc.ipfsUrl && (
+                    <a
+                      href={doc.ipfsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 text-sm hover:underline"
+                    >
+                      🌐 Ver no IPFS
+                    </a>
+                  )}
+                  <Link
+                    to={`/validar/${doc.hash}`}
+                    className="text-indigo-600 text-sm hover:underline font-medium"
                   >
-                    🌐 Ver no IPFS
-                  </a>
-                )}
-
-                <Link
-                  to={`/validar/${doc.hash}`}
-                  className="inline-block mt-3 text-indigo-600 text-sm hover:underline font-medium"
-                >
-                  🔍 Verificar Assinatura
-                </Link>
+                    🔍 Verificar Assinatura
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
