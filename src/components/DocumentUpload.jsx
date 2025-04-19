@@ -111,22 +111,22 @@ const DocumentUpload = ({ docs, setDocs }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
+    <div className="bg-[#fefdfb] rounded-xl p-6 border border-[#e7e7e7] shadow-md">
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-        <button onClick={connectWallet} className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700">
+        <button onClick={connectWallet} className="bg-[#ff5a5f] text-white px-4 py-2 rounded-lg shadow hover:bg-[#e94b50]">
           {walletAddress ? `🔗 ${walletAddress.slice(0, 6)}...` : 'Conectar Carteira'}
         </button>
 
         <input type="file" onChange={handleFileChange} className="hidden" id="file" />
-        <label htmlFor="file" className="cursor-pointer bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Escolher Arquivo</label>
+        <label htmlFor="file" className="cursor-pointer bg-[#f2f2f2] text-gray-800 px-4 py-2 rounded hover:bg-[#e6e6e6]">Escolher Arquivo</label>
 
-        <button onClick={handleUpload} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Upload</button>
+        <button onClick={handleUpload} className="bg-[#00a699] text-white px-4 py-2 rounded hover:bg-[#008f86]">Upload</button>
       </div>
 
       {docs.length > 0 && (
         <div className="space-y-4">
           {docs.map((doc, i) => (
-            <div key={i} className="border border-gray-300 p-4 rounded-xl bg-gray-50">
+            <div key={i} className="border border-[#dddddd] p-4 rounded-xl bg-white">
               <p className="text-sm text-gray-700"><strong>📄 Nome:</strong> {doc.name}</p>
               <p className="text-sm text-gray-700"><strong>Hash:</strong> {doc.hash}</p>
 
@@ -136,7 +136,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
                   <a href={doc.pdfUrl} download={doc.pdfName} className="text-indigo-600 hover:underline text-sm">📥 Baixar PDF</a>
                 </div>
               ) : (
-                <button onClick={() => handleSign(i)} className="mt-2 bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-700 text-sm">
+                <button onClick={() => handleSign(i)} className="mt-2 bg-[#007a87] text-white px-4 py-1 rounded hover:bg-[#005f66] text-sm">
                   ✍️ Assinar Documento
                 </button>
               )}
