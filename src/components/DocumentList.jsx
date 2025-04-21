@@ -1,53 +1,57 @@
-import { useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
-import { useParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import React from 'react';
+import { auth, db } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
-const VerificationPage = () => {
-  const { hash } = useParams();
-  const canvasRef = useRef(null);
-  const [signatures, setSignatures] = useState([]);
+export default function DocumentList({ docs, setDocs }) {
+  const handleDelete = async (index) => {
+    const updatedDocs = [...docs];
+    const [removed] = updatedDocs.splice(index, 1);
+    setDocs(updatedDocs);
 
-  const verificationUrl = `${window.location.origin}/validar/${hash}`;
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, verificationUrl, { width: 160 }, (err) => {
-        if (err) console.error(err);
-      });
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
     }
 
-    const fetchDoc = async () => {
-      const docRef = doc(db, 'documentos', hash); // ajuste o nome da coleção se necessário
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setSignatures(data.signatures || []);
-      }
-    };
+    // Remove do Firestore
+    try {
+      await deleteDoc(doc(db, 'documentos', removed.hash));
+    } catch (err) {
+      console.error('Erro ao excluir do Firestore:', err);
+    }
+  };
 
-    fetchDoc();
-  }, [verificationUrl, hash]);
+  if (!docs || docs.length === 0) {
+    return <p className="text-sm text-gray-500">Nenhum documento encontrado.</p>;
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center py-10 px-4">
-      <h1 className="text-2xl font-bold mb-4">Verificação de Documento</h1>
-      <p className="text-sm text-gray-600 mb-1">
-        Hash verificado: <span className="font-mono">{hash}</span>
-      </p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {docs.map((doc, index) => (
+        <div
+          key={index}
+          className="bg-white shadow-md border border-gray-200 rounded-xl p-5"
+        >
+          <h2 className="text-lg font-semibold text-indigo-700 mb-2">📄 {doc.name}</h2>
+          <p className="text-sm text-yellow-600 font-medium">Status: {doc.status}</p>
+          <p className="text-xs text-gray-500 mt-1 break-all">Hash: {doc.hash}</p>
 
-      <div className="my-6">
-        <canvas ref={canvasRef} />
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Escaneie o QR Code para validar este documento em outro dispositivo
-        </p>
-      </div>
+          {doc.signatures?.length > 0 && (
+            <ul className="mt-2 text-xs text-gray-600 list-disc ml-4">
+              {doc.signatures.map((sig, i) => (
+                <li key={i}>{sig.wallet} – {sig.date}</li>
+              ))}
+            </ul>
+          )}
 
-      <p className="text-sm text-gray-800 font-medium mt-4">
-        📄 Assinaturas: {signatures.length}
-      </p>
+          <button
+            onClick={() => handleDelete(index)}
+            className="mt-3 text-sm text-red-600 hover:underline"
+          >
+            🗑️ Excluir Documento
+          </button>
+        </div>
+      ))}
     </div>
   );
-};
-
-export default VerificationPage;
+}
