@@ -1,60 +1,51 @@
 import React, { useState } from 'react';
-import { auth } from '@/firebase';
-import { jsPDF } from 'jspdf';
-import QRCode from 'qrcode';
+import { auth, db } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
-export default function DocumentUpload({ docs, setDocs, walletAddress }) {
+const DocumentUpload = ({ docs, setDocs }) => {
   const [file, setFile] = useState(null);
 
-  const handleFileChange = (e) => setFile(e.target.files[0]);
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
 
-  const handleUpload = () => {
-    if (!walletAddress) {
-      alert('Conecte a carteira antes de fazer upload.');
-      return;
-    }
-
+  const handleUpload = async (e) => {
+    e.preventDefault();
     if (!file) return;
 
-    const mockHash = `hash_${Math.random().toString(36).substring(2, 10)}`;
+    const mockHash = `hash_${Math.random().toString(36).substring(7)}`;
     const newDoc = {
       name: file.name,
       hash: mockHash,
+      cidUrl: `https://gateway.pinata.cloud/ipfs/${mockHash}`,
       status: 'Pendente',
-      signatures: [],
+      signatures: []
     };
 
+    const uid = auth.currentUser?.uid;
     const updatedDocs = [...docs, newDoc];
     setDocs(updatedDocs);
-    setFile(null);
 
-    const uid = auth.currentUser?.uid;
     if (uid) {
       localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
     }
+
+    // Salva no Firestore com o hash como ID
+    await setDoc(doc(db, 'documentos', newDoc.hash), newDoc);
+    setFile(null);
   };
 
   const handleSign = async (index) => {
-    if (!walletAddress) return;
-
     const updatedDocs = [...docs];
-    const doc = updatedDocs[index];
+    const docToSign = updatedDocs[index];
 
-    const alreadySigned = doc.signatures.some(sig => sig.wallet === walletAddress);
-    if (alreadySigned) {
-      alert('Você já assinou este documento.');
-      return;
-    }
-
-    const now = new Date().toLocaleString();
     const newSignature = {
-      wallet: walletAddress,
-      date: now,
-      hash: doc.hash,
+      wallet: '0x' + Math.random().toString(16).substr(2, 40),
+      date: new Date().toLocaleString()
     };
 
-    doc.signatures.push(newSignature);
-    doc.status = 'Assinado';
+    docToSign.signatures.push(newSignature);
+    docToSign.status = 'Assinado';
     setDocs(updatedDocs);
 
     const uid = auth.currentUser?.uid;
@@ -62,62 +53,42 @@ export default function DocumentUpload({ docs, setDocs, walletAddress }) {
       localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
     }
 
-    // 👉 Geração do PDF com QR Code
-    const pdf = new jsPDF();
-    pdf.setFontSize(16);
-    pdf.text(`📄 Documento: ${doc.name}`, 20, 30);
-    pdf.setFontSize(12);
-    pdf.text(`Hash: ${doc.hash}`, 20, 45);
-    pdf.text(`Assinado por:`, 20, 60);
-
-    doc.signatures.forEach((sig, i) => {
-      pdf.text(`- ${sig.wallet} em ${sig.date}`, 20, 70 + (i * 10));
-    });
-
-    // Gerar QR Code com link de verificação
-    const qrText = `${window.location.origin}/validar/${doc.hash}`;
-    const qrImage = await QRCode.toDataURL(qrText);
-    pdf.addImage(qrImage, 'PNG', 140, 240, 50, 50);
-
-    const filename = `documento-assinado-${doc.hash}.pdf`;
-    pdf.save(filename);
+    // Atualiza no Firestore
+    await setDoc(doc(db, 'documentos', docToSign.hash), docToSign);
   };
 
   return (
-    <div className="border rounded-lg p-4 shadow-md bg-white">
-    <input type="file" onChange={handleFileChange} className="mb-4" />
-      <button
-        onClick={handleUpload}
-        className="bg-black text-white px-4 py-2 rounded mr-4"
-      >
-        Upload
-      </button>
+    <div>
+      <form onSubmit={handleUpload} className="mb-4">
+        <input type="file" onChange={handleFileChange} className="mb-2" />
+        <button type="submit" className="bg-black text-white px-4 py-2 rounded text-sm">
+          Upload
+        </button>
+      </form>
 
       {docs.map((doc, index) => (
-        <div key={index} className="border rounded-lg p-4 mt-4 bg-gray-50">
-          <h3 className="text-md font-semibold text-indigo-700 mb-1">📄 {doc.name}</h3>
-          <p className="text-sm text-yellow-600 font-medium">Status: {doc.status}</p>
-          <p className="text-xs text-gray-500">Hash: {doc.hash}</p>
+        <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-4 mb-4">
+          <h3 className="text-md font-bold text-indigo-700">{doc.name}</h3>
+          <p className="text-sm text-gray-600">Status: <span className="text-green-700">{doc.status}</span></p>
+          <p className="text-xs text-gray-400">Hash: {doc.hash}</p>
+
           <button
             onClick={() => handleSign(index)}
-            disabled={!walletAddress}
-            className={`mt-3 px-4 py-2 rounded text-white ${walletAddress ? 'bg-[#ff385c]' : 'bg-gray-400 cursor-not-allowed'}`}
+            className="mt-2 bg-gray-800 text-white px-3 py-1 rounded text-sm"
           >
-            Assinar Documento
+            ✍️ Assinar Documento
           </button>
 
-          {doc.signatures.length > 0 && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-gray-700">Assinaturas:</p>
-              <ul className="text-xs text-gray-600 list-disc ml-4">
-                {doc.signatures.map((sig, i) => (
-                  <li key={i}>{sig.wallet} – {sig.date}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <p className="text-xs mt-2">Assinaturas:</p>
+          <ul className="text-xs text-gray-700 list-disc ml-4">
+            {doc.signatures.map((sig, i) => (
+              <li key={i}>{sig.wallet} – {sig.date}</li>
+            ))}
+          </ul>
         </div>
       ))}
     </div>
   );
-}
+};
+
+export default DocumentUpload;
