@@ -1,27 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function useWallet() {
-  const [walletAddress, setWalletAddress] = useState(null);
+  const [walletAddress, setWalletAddress] = useState('');
 
   const connectWallet = async () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
+    if (window.ethereum) {
       try {
         const accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts',
+          method: 'eth_requestAccounts'
         });
         setWalletAddress(accounts[0]);
       } catch (err) {
         console.error('Erro ao conectar carteira:', err);
       }
     } else {
-      alert('MetaMask não encontrada. Instale para continuar.');
+      alert('MetaMask não encontrada');
     }
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
+    const checkConnection = async () => {
+      if (window.ethereum) {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+        }
+      }
+    };
+    checkConnection();
+
+    if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
-        setWalletAddress(accounts[0] || null);
+        setWalletAddress(accounts[0] || '');
       });
     }
   }, []);
