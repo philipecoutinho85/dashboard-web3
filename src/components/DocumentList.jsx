@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
 
 const VerificationPage = () => {
   const { hash } = useParams();
