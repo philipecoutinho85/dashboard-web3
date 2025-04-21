@@ -13,13 +13,15 @@ export default function Explorer() {
 
   useEffect(() => {
     const fetchDocs = async () => {
-      const querySnapshot = await getDocs(collection(db, 'documentos'));
-      const results = [];
-      querySnapshot.forEach((d) => {
-        results.push(d.data());
-      });
-      setDocs(results);
+      try {
+        const snapshot = await getDocs(collection(db, 'documentos'));
+        const documentos = snapshot.docs.map((d) => d.data());
+        setDocs(documentos);
+      } catch (error) {
+        console.error('Erro ao buscar documentos:', error);
+      }
     };
+
     fetchDocs();
   }, []);
 
@@ -33,8 +35,8 @@ export default function Explorer() {
   };
 
   const filteredDocs = docs.filter((doc) =>
-    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.hash.toLowerCase().includes(searchTerm.toLowerCase())
+    doc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.hash?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -87,9 +89,13 @@ export default function Explorer() {
                 <p className="text-xs text-gray-500 mt-1 break-all">Hash: {doc.hash}</p>
                 <p className="text-sm mt-2">Assinaturas: {doc.signatures?.length || 0}</p>
                 <ul className="text-xs text-gray-600 list-disc ml-4 mt-1">
-                  {doc.signatures?.map((sig, i) => (
-                    <li key={i}>{sig.wallet} – {sig.date}</li>
-                  ))}
+                  {doc.signatures?.length > 0 ? (
+                    doc.signatures.map((sig, i) => (
+                      <li key={i}>{sig.wallet} – {sig.date}</li>
+                    ))
+                  ) : (
+                    <li>Nenhuma assinatura</li>
+                  )}
                 </ul>
 
                 <div className="flex justify-between items-center mt-4">
