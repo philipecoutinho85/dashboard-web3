@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '@/firebase';
+import { db, auth } from '@/firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import useWallet from '@/hooks/useWallet';
 
 export default function Explorer() {
   const [docs, setDocs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const { walletAddress, connectWallet } = useWallet();
+  const userEmail = auth.currentUser?.email || '';
 
   useEffect(() => {
     const fetchDocs = async () => {
@@ -36,16 +39,29 @@ export default function Explorer() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header com Menu */}
-      <header className="bg-black text-white py-4 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">🔍 Explorer | HashSign</h1>
-          <nav>
-            <a href="/" className="text-sm hover:underline mr-4">🏠 Dashboard</a>
-            <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
-          </nav>
+      {/* Header padrão */}
+      <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b">
+        <div>
+          <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
+          <p className="text-sm text-gray-500">Bem-vindo, {userEmail}</p>
+          {walletAddress && (
+            <p className="text-xs text-green-600 mt-1">
+              Carteira: <span className="font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+            </p>
+          )}
         </div>
-      </header>
+        <div className="flex items-center space-x-4">
+          <a href="/" className="text-sm hover:underline flex items-center">🏠 Dashboard</a>
+          <a href="/explorer" className="text-sm hover:underline flex items-center">📂 Explorer</a>
+          <button
+            onClick={connectWallet}
+            className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
+          >
+            {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
+          </button>
+          <a href="/login" className="text-sm text-rose-500 hover:underline">Sair</a>
+        </div>
+      </div>
 
       {/* Campo de busca */}
       <div className="max-w-4xl mx-auto px-4 py-6">
