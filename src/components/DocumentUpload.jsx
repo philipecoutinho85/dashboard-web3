@@ -42,7 +42,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
     const updatedDocs = [...docs];
     const docToSign = updatedDocs[index];
 
-    const alreadySigned = docToSign.signatures.some(sig => sig.wallet === walletAddress);
+    const alreadySigned = docToSign.signatures.some(sig =>
+      sig.wallet.toLowerCase() === walletAddress.toLowerCase()
+    );
     if (alreadySigned) return;
 
     const newSignature = {
@@ -72,7 +74,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
       </form>
 
       {docs.map((doc, index) => {
-        const alreadySigned = doc.signatures.some(sig => sig.wallet === walletAddress);
+        const alreadySigned = doc.signatures.some(sig =>
+          sig.wallet.toLowerCase() === walletAddress?.toLowerCase()
+        );
 
         return (
           <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-4 mb-4">
