@@ -27,7 +27,14 @@ export default function Explorer() {
 
   const handleDelete = async (hash) => {
     await deleteDoc(doc(db, 'documentos', hash));
-    setDocs(docs.filter((d) => d.hash !== hash));
+    const newDocs = docs.filter((d) => d.hash !== hash);
+    setDocs(newDocs);
+
+    // Atualiza o localStorage também
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(newDocs));
+    }
   };
 
   const handleVerify = (hash) => {
