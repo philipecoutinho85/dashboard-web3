@@ -1,100 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { auth } from '@/firebase';
-import Header from '@/components/Header';
+import { db } from '@/firebase';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 export default function Explorer() {
   const [docs, setDocs] = useState([]);
-  const [query, setQuery] = useState('');
-  const [filtered, setFiltered] = useState([]);
-
-  const uid = auth.currentUser?.uid;
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (uid) {
-      const allDocs = JSON.parse(localStorage.getItem('hashsign_docs_by_user') || '{}');
-      const userDocs = allDocs[uid] || [];
-      setDocs(userDocs);
-      setFiltered(userDocs);
-    }
-  }, [uid]);
+    const fetchDocs = async () => {
+      const querySnapshot = await getDocs(collection(db, 'documentos'));
+      const results = [];
+      querySnapshot.forEach((d) => {
+        results.push(d.data());
+      });
+      setDocs(results);
+    };
+    fetchDocs();
+  }, []);
 
-  useEffect(() => {
-    const term = query.toLowerCase();
-    const filteredDocs = docs.filter(
-      (doc) =>
-        doc.name.toLowerCase().includes(term) ||
-        doc.hash.toLowerCase().includes(term)
-    );
-    setFiltered(filteredDocs);
-  }, [query, docs]);
+  const handleDelete = async (hash) => {
+    await deleteDoc(doc(db, 'documentos', hash));
+    setDocs(docs.filter((d) => d.hash !== hash));
+  };
+
+  const handleVerify = (hash) => {
+    navigate(`/validar/${hash}`);
+  };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7] py-12 px-6 font-sans">
-      <div className="max-w-5xl mx-auto">
-        <Header />
+    <div className="px-4 py-8 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">📂 Documentos Públicos</h1>
 
-        <h1 className="text-3xl font-bold text-black my-8 text-center">
-          🗂️ Seus Documentos Assinados
-        </h1>
+      {docs.length === 0 && (
+        <p className="text-gray-500 text-sm">Nenhum documento disponível.</p>
+      )}
 
-        <input
-          type="text"
-          placeholder="🔍 Buscar por nome ou hash..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full max-w-lg mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#ff385c] text-sm"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {docs.map((doc, index) => (
+          <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-5">
+            <h2 className="text-lg font-semibold text-indigo-700 mb-2">📄 {doc.name}</h2>
+            <p className="text-sm text-yellow-600 font-medium">Status: {doc.status}</p>
+            <p className="text-xs text-gray-500 mt-1 break-all">Hash: {doc.hash}</p>
+            <p className="text-sm mt-2">Assinaturas: {doc.signatures?.length || 0}</p>
+            <ul className="text-xs text-gray-600 list-disc ml-4 mt-1">
+              {doc.signatures?.map((sig, i) => (
+                <li key={i}>{sig.wallet} – {sig.date}</li>
+              ))}
+            </ul>
 
-        {filtered.length === 0 ? (
-          <p className="text-center text-gray-500">Nenhum documento encontrado.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((doc, index) => (
-              <div
-                key={index}
-                className="bg-white border border-gray-200 rounded-xl shadow hover:shadow-md transition duration-200 p-5 flex flex-col justify-between"
+            <div className="flex justify-between items-center mt-4">
+              <button
+                onClick={() => handleVerify(doc.hash)}
+                className="text-sm text-blue-600 hover:underline"
               >
-                <div>
-                  <h2 className="text-lg font-semibold text-[#ff385c] truncate">
-                    📄 {doc.name}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-2">
-                    <strong>Hash:</strong> {doc.hash.slice(0, 10)}...
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    <strong>Assinaturas:</strong> {doc.signatures?.length || 0}
-                  </p>
+                🔍 Verificar Assinatura
+              </button>
 
-                  {doc.signatures?.map((sig, i) => (
-                    <div key={i} className="text-xs text-gray-500 mt-1 ml-2">
-                      • {sig.wallet.slice(0, 6)}... — {sig.signedAt}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 flex flex-col gap-2">
-                  {doc.ipfsUrl && (
-                    <a
-                      href={doc.ipfsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 text-sm hover:underline"
-                    >
-                      🌐 Ver no IPFS
-                    </a>
-                  )}
-                  <Link
-                    to={`/validar/${doc.hash}`}
-                    className="text-[#ff385c] text-sm hover:underline font-medium"
-                  >
-                    🔍 Verificar Assinatura
-                  </Link>
-                </div>
-              </div>
-            ))}
+              <button
+                onClick={() => handleDelete(doc.hash)}
+                className="text-sm text-red-600 hover:underline"
+              >
+                🗑️ Excluir Documento
+              </button>
+            </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
