@@ -1,41 +1,74 @@
-// ✅ Dashboard.jsx atualizado com Header funcional e layout consistente
 import React, { useEffect, useState } from 'react';
-import { auth } from '@/firebase';
-import DocumentUpload from '@/components/DocumentUpload';
-import DocumentList from '@/components/DocumentList';
-import useWallet from '@/hooks/useWallet';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { db, auth } from '@/firebase';
 import Header from '@/components/Header';
 
-export default function Dashboard() {
-  const [docs, setDocs] = useState([]);
-  const { walletAddress, connectWallet } = useWallet();
+const Dashboard = () => {
+  const [documentos, setDocumentos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const user = auth.currentUser;
 
   useEffect(() => {
-    const userId = user?.uid;
-    if (!userId) return;
+    if (!user) return;
 
-    const savedDocs = localStorage.getItem(`hashsign_docs_${userId}`);
-    if (savedDocs) {
-      setDocs(JSON.parse(savedDocs));
-    }
+    const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
+      const data = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((doc) => doc.uid === user.uid); // opcional: só documentos do usuário logado
+
+      setDocumentos(data);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
+      await deleteDoc(doc(db, 'documentos', id));
+    }
+  };
+
+  if (loading) return <p className="text-center mt-10">Carregando seus documentos...</p>;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <Header walletAddress={walletAddress} connectWallet={connectWallet} />
+    <>
+      <Header />
+      <div className="max-w-4xl mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-6 text-center">📁 Meus Documentos</h1>
 
-        <div className="bg-white p-6 rounded-xl shadow mb-10">
-          <h2 className="text-lg font-semibold mb-4">📤 Upload de Documento</h2>
-          <DocumentUpload docs={docs} setDocs={setDocs} walletAddress={walletAddress} />
-        </div>
-
-        <div>
-          <h3 className="text-md font-semibold mb-3">📁 Meus Documentos</h3>
-          <DocumentList docs={docs} setDocs={setDocs} />
-        </div>
+        {documentos.length === 0 ? (
+          <p className="text-center text-gray-500">Você ainda não enviou nenhum documento.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {documentos.map((doc) => (
+              <div key={doc.id} className="bg-white shadow border rounded-xl p-4">
+                <h3 className="text-md font-semibold text-indigo-700">{doc.name}</h3>
+                <p className="text-xs text-gray-500 mb-1">Status: {doc.status}</p>
+                <p className="text-xs break-words text-gray-400">Hash: {doc.hash}</p>
+                <div className="mt-2 flex justify-between">
+                  <a
+                    href={`/validar/${doc.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                  >
+                    Ver
+                  </a>
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
-}
+};
+
+export default Dashboard;
