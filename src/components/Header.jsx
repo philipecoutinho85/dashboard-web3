@@ -1,37 +1,40 @@
-// src/pages/Admin.jsx
+// src/pages/Explorer.jsx
 import React, { useEffect, useState } from 'react';
-import { auth, db } from '@/firebase';
+import { db, auth } from '@/firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import useWallet from '@/hooks/useWallet';
 import Header from '@/components/Header';
 
-export default function Admin() {
+export default function Explorer() {
   const [docs, setDocs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-  const { walletAddress } = useWallet();
+  const { walletAddress, connectWallet } = useWallet();
   const userEmail = auth.currentUser?.email || '';
-
-  const isAdmin = userEmail === 'philipe@web3.com';
 
   useEffect(() => {
     const fetchDocs = async () => {
-      if (!isAdmin) return;
-      const snapshot = await getDocs(collection(db, 'documentos'));
-      const documentos = snapshot.docs.map((d) => d.data());
-      setDocs(documentos);
+      try {
+        const snapshot = await getDocs(collection(db, 'documentos'));
+        const documentos = snapshot.docs.map((d) => d.data());
+        setDocs(documentos);
+      } catch (error) {
+        console.error('Erro ao buscar documentos:', error);
+      }
     };
 
     fetchDocs();
-  }, [isAdmin]);
+  }, []);
 
   const handleDelete = async (hash) => {
     await deleteDoc(doc(db, 'documentos', hash));
-    const updated = docs.filter((d) => d.hash !== hash);
-    setDocs(updated);
+    const newDocs = docs.filter((d) => d.hash !== hash);
+    setDocs(newDocs);
+
     const uid = auth.currentUser?.uid;
     if (uid) {
-      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updated));
+      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(newDocs));
     }
   };
 
@@ -39,77 +42,65 @@ export default function Admin() {
     navigate(`/validar/${hash}`);
   };
 
-  const totalDocs = docs.length;
-  const signedDocs = docs.filter(doc => doc.status === 'Assinado').length;
-  const unsignedDocs = totalDocs - signedDocs;
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500 text-sm">
-        Acesso restrito ao administrador.
-      </div>
-    );
-  }
+  const filteredDocs = docs.filter((doc) =>
+    doc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.hash?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <h2 className="text-lg font-semibold mb-4">📊 Painel Administrativo</h2>
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <input
+          type="text"
+          placeholder="Buscar por nome ou hash..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+        />
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Total de Documentos</h3>
-            <p className="text-xl font-bold text-gray-800">{totalDocs}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Assinados</h3>
-            <p className="text-xl font-bold text-green-600">{signedDocs}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Pendentes</h3>
-            <p className="text-xl font-bold text-yellow-600">{unsignedDocs}</p>
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 pb-12">
+        {filteredDocs.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center">Nenhum documento encontrado.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {filteredDocs.map((doc, index) => (
+              <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-5">
+                <h2 className="text-lg font-semibold text-indigo-700 mb-2">📄 {doc.name}</h2>
+                <p className="text-sm text-yellow-600 font-medium">Status: {doc.status}</p>
+                <p className="text-xs text-gray-500 mt-1 break-all">Hash: {doc.hash}</p>
+                <p className="text-sm mt-2">Assinaturas: {doc.signatures?.length || 0}</p>
+                <ul className="text-xs text-gray-600 list-disc ml-4 mt-1">
+                  {doc.signatures?.length > 0 ? (
+                    doc.signatures.map((sig, i) => (
+                      <li key={i}>{sig.wallet} – {sig.date}</li>
+                    ))
+                  ) : (
+                    <li>Nenhuma assinatura</li>
+                  )}
+                </ul>
 
-        <div className="overflow-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow text-sm">
-            <thead className="bg-gray-100 text-left">
-              <tr>
-                <th className="px-4 py-2">Nome</th>
-                <th className="px-4 py-2">Hash</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Assinaturas</th>
-                <th className="px-4 py-2 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {docs.map((doc, index) => (
-                <tr key={index} className="border-t">
-                  <td className="px-4 py-2">{doc.name}</td>
-                  <td className="px-4 py-2 break-all text-gray-600">{doc.hash}</td>
-                  <td className="px-4 py-2">{doc.status}</td>
-                  <td className="px-4 py-2">{doc.signatures?.length || 0}</td>
-                  <td className="px-4 py-2 text-center space-x-2">
-                    <button
-                      onClick={() => handleVerify(doc.hash)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      🔍 Verificar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(doc.hash)}
-                      className="text-red-600 hover:underline"
-                    >
-                      🗑️ Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                <div className="flex justify-between items-center mt-4">
+                  <button
+                    onClick={() => handleVerify(doc.hash)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    🔍 Verificar Assinatura
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(doc.hash)}
+                    className="text-sm text-red-600 hover:underline"
+                  >
+                    🗑️ Excluir Documento
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
