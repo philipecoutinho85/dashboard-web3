@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
@@ -6,12 +6,13 @@ import QRCode from 'react-qr-code';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import useWallet from '@/hooks/useWallet';
+import Header from '@/components/Header'; // ✅ Inclusão da barra superior
 
 const ValidarDocumento = () => {
   const { hash } = useParams();
   const [documento, setDocumento] = useState(null);
   const [loading, setLoading] = useState(true);
-  const cardRef = React.useRef();
+  const cardRef = useRef();
   const { walletAddress } = useWallet();
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const ValidarDocumento = () => {
     const updatedDoc = {
       ...documento,
       signatures: updatedSignatures,
-      status: updatedStatus
+      status: updatedStatus,
     };
 
     const ref = doc(db, 'documentos', hash);
@@ -83,46 +84,57 @@ const ValidarDocumento = () => {
   const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      <div ref={cardRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300">
-        <h2 className="text-2xl font-semibold text-center mb-4 text-black">Validação de Documento</h2>
-        <p className="text-sm text-gray-700 mb-2">Nome: <strong>{documento.name}</strong></p>
-        <p className="text-sm text-gray-700 mb-2">Hash: <span className="break-words text-xs">{documento.hash}</span></p>
-        <p className="text-sm text-gray-700 mb-2">Status: <span className="text-green-600 font-medium">{documento.status}</span></p>
+    <>
+      <Header /> {/* ✅ Exibe barra superior */}
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+        <div ref={cardRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300">
+          <h2 className="text-2xl font-semibold text-center mb-4 text-black">Validação de Documento</h2>
+          <p className="text-sm text-gray-700 mb-2">
+            Nome: <strong>{documento.name}</strong>
+          </p>
+          <p className="text-sm text-gray-700 mb-2">
+            Hash: <span className="break-words text-xs">{documento.hash}</span>
+          </p>
+          <p className="text-sm text-gray-700 mb-2">
+            Status: <span className="text-green-600 font-medium">{documento.status}</span>
+          </p>
 
-        {documento.signatures && documento.signatures.length > 0 && (
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold text-black">Assinaturas:</h3>
-            <ul className="list-disc ml-4 text-sm text-gray-700 mt-1">
-              {documento.signatures.map((sig, index) => (
-                <li key={index}>{sig.wallet} — {sig.email || 'Sem e-mail'} — {sig.date}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+          {documento.signatures?.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold text-black">Assinaturas:</h3>
+              <ul className="list-disc ml-4 text-sm text-gray-700 mt-1">
+                {documento.signatures.map((sig, index) => (
+                  <li key={index}>
+                    {sig.wallet} — {sig.email || 'Sem e-mail'} — {sig.date}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        <div className="flex justify-between items-center mt-6">
-          <QRCode value={window.location.href} size={72} bgColor="#ffffff" fgColor="#000000" />
-          <button
-            onClick={handleDownloadPDF}
-            className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
-          >
-            Baixar PDF assinado
-          </button>
-        </div>
-
-        {!alreadySigned && documento.signatures.length < 2 && autorizadoComoSegundo && (
-          <div className="mt-6 text-center">
+          <div className="flex justify-between items-center mt-6">
+            <QRCode value={window.location.href} size={72} />
             <button
-              onClick={handleSign}
-              className="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition"
+              onClick={handleDownloadPDF}
+              className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
             >
-              ✍️ Assinar como segundo signatário
+              Baixar PDF assinado
             </button>
           </div>
-        )}
+
+          {!alreadySigned && documento.signatures.length < 2 && autorizadoComoSegundo && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleSign}
+                className="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition"
+              >
+                ✍️ Assinar como segundo signatário
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
