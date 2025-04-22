@@ -5,6 +5,8 @@ import useWallet from '@/hooks/useWallet';
 
 const DocumentUpload = ({ docs, setDocs }) => {
   const [file, setFile] = useState(null);
+  const [assinaturaMultipla, setAssinaturaMultipla] = useState('única');
+  const [emailSegundo, setEmailSegundo] = useState('');
   const { walletAddress, connectWallet } = useWallet();
 
   const handleFileChange = (e) => {
@@ -22,7 +24,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
       cidUrl: `https://gateway.pinata.cloud/ipfs/${mockHash}`,
       status: 'Pendente',
       signatures: [],
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      assinaturaMultipla,
+      emailSegundo: assinaturaMultipla === 'múltipla' ? emailSegundo : null,
     };
 
     const updatedDocs = [...docs, newDoc];
@@ -35,6 +39,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
     await setDoc(doc(db, 'documentos', newDoc.hash), newDoc);
     setFile(null);
+    setEmailSegundo('');
   };
 
   const handleSign = async (index) => {
@@ -77,9 +82,38 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
   return (
     <div>
-      <form onSubmit={handleUpload} className="mb-4 flex flex-col sm:flex-row items-center gap-4">
+      <form onSubmit={handleUpload} className="mb-4 flex flex-col gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de assinatura</label>
+          <select
+            value={assinaturaMultipla}
+            onChange={(e) => setAssinaturaMultipla(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+          >
+            <option value="única">Apenas uma pessoa irá assinar</option>
+            <option value="múltipla">Haverá outra pessoa para assinar</option>
+          </select>
+        </div>
+
+        {assinaturaMultipla === 'múltipla' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail da segunda parte</label>
+            <input
+              type="email"
+              placeholder="exemplo@email.com"
+              value={emailSegundo}
+              onChange={(e) => setEmailSegundo(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+        )}
+
         <input type="file" onChange={handleFileChange} className="text-sm" />
-        <button className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition">
+
+        <button
+          type="submit"
+          className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
+        >
           Upload
         </button>
       </form>
