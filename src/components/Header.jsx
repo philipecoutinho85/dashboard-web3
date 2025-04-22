@@ -1,9 +1,21 @@
+// src/components/Header.jsx
 import React from 'react';
 import { auth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
 export default function Header({ walletAddress, connectWallet }) {
   const userEmail = auth.currentUser?.email || '';
-  const isAdmin = userEmail === 'philipe@web3.com';
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (err) {
+      console.error('Erro ao sair:', err);
+    }
+  };
 
   return (
     <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b mb-6 rounded-xl">
@@ -20,16 +32,19 @@ export default function Header({ walletAddress, connectWallet }) {
       <div className="flex items-center space-x-4">
         <a href="/dashboard" className="text-sm hover:underline">🏠 Dashboard</a>
         <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
-        {isAdmin && (
-          <a href="/admin" className="text-sm hover:underline">🛠️ Admin</a>
-        )}
+        <a href="/admin" className="text-sm hover:underline">🛠️ Admin</a>
         <button
           onClick={connectWallet}
           className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
         >
           {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
         </button>
-        <a href="/login" className="text-sm text-rose-500 hover:underline">Sair</a>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-rose-500 hover:underline"
+        >
+          Sair
+        </button>
       </div>
     </div>
   );
