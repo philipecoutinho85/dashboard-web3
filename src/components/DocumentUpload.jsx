@@ -7,7 +7,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
   const [file, setFile] = useState(null);
   const [assinaturaMultipla, setAssinaturaMultipla] = useState('única');
   const [emailSegundo, setEmailSegundo] = useState('');
-  const { walletAddress, connectWallet } = useWallet();
+  const { walletAddress } = useWallet();
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -15,9 +15,11 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file) return;
+    if (!file || !auth.currentUser) return;
 
+    const uid = auth.currentUser.uid;
     const mockHash = `hash_${Math.random().toString(36).substring(7)}`;
+
     const newDoc = {
       name: file.name,
       hash: mockHash,
@@ -27,15 +29,12 @@ const DocumentUpload = ({ docs, setDocs }) => {
       createdAt: new Date().toISOString(),
       assinaturaMultipla,
       emailSegundo: assinaturaMultipla === 'múltipla' ? emailSegundo : null,
+      uid // ✅ Salva o UID para aparecer no Dashboard
     };
 
     const updatedDocs = [...docs, newDoc];
     setDocs(updatedDocs);
-
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
-    }
+    localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
 
     await setDoc(doc(db, 'documentos', newDoc.hash), newDoc);
     setFile(null);
