@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth, db } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import useWallet from '@/hooks/useWallet';
 
 const DocumentUpload = ({ docs, setDocs }) => {
@@ -21,13 +21,14 @@ const DocumentUpload = ({ docs, setDocs }) => {
       hash: mockHash,
       cidUrl: `https://gateway.pinata.cloud/ipfs/${mockHash}`,
       status: 'Pendente',
-      signatures: []
+      signatures: [],
+      createdAt: new Date().toISOString()
     };
 
-    const uid = auth.currentUser?.uid;
     const updatedDocs = [...docs, newDoc];
     setDocs(updatedDocs);
 
+    const uid = auth.currentUser?.uid;
     if (uid) {
       localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
     }
@@ -39,29 +40,39 @@ const DocumentUpload = ({ docs, setDocs }) => {
   const handleSign = async (index) => {
     if (!walletAddress) return;
 
-    const updatedDocs = [...docs];
-    const docToSign = updatedDocs[index];
+    const docToSign = docs[index];
+    const ref = doc(db, 'documentos', docToSign.hash);
+    const snapshot = await getDoc(ref);
+    if (!snapshot.exists()) return;
 
-    const alreadySigned = docToSign.signatures.some(sig =>
-      sig.wallet.toLowerCase() === walletAddress.toLowerCase()
-    );
-    if (alreadySigned) return;
+    const existingDoc = snapshot.data();
+    const alreadySigned = existingDoc.signatures.some(sig => sig.wallet === walletAddress);
+    if (alreadySigned || existingDoc.signatures.length >= 2) return;
 
     const newSignature = {
       wallet: walletAddress,
       date: new Date().toLocaleString()
     };
 
-    docToSign.signatures.push(newSignature);
-    docToSign.status = 'Assinado';
+    const updatedSignatures = [...existingDoc.signatures, newSignature];
+    const updatedStatus = updatedSignatures.length >= 2 ? 'Assinado' : 'Pendente';
+
+    const updatedDoc = {
+      ...existingDoc,
+      signatures: updatedSignatures,
+      status: updatedStatus
+    };
+
+    await setDoc(ref, updatedDoc);
+
+    const updatedDocs = [...docs];
+    updatedDocs[index] = updatedDoc;
     setDocs(updatedDocs);
 
     const uid = auth.currentUser?.uid;
     if (uid) {
       localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
     }
-
-    await setDoc(doc(db, 'documentos', docToSign.hash), docToSign);
   };
 
   return (
@@ -74,34 +85,32 @@ const DocumentUpload = ({ docs, setDocs }) => {
       </form>
 
       {docs.map((doc, index) => {
-        const alreadySigned = doc.signatures.some(sig =>
-          sig.wallet.toLowerCase() === walletAddress?.toLowerCase()
-        );
+        const alreadySigned = doc.signatures.some(sig => sig.wallet === walletAddress);
 
         return (
           <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-4 mb-4">
             <h3 className="text-md font-bold text-indigo-700">{doc.name}</h3>
-            <p className="text-sm text-gray-600">Status: <span className="text-green-700">{doc.status}</span></p>
+            <p className="text-sm text-gray-600">Status: <span className="text-yellow-700">{doc.status}</span></p>
             <p className="text-xs text-gray-400">Hash: {doc.hash}</p>
+            <p className="text-xs mt-1">Assinaturas: {doc.signatures.length} de 2</p>
 
             <button
-              disabled={!walletAddress || alreadySigned}
+              disabled={!walletAddress || alreadySigned || doc.signatures.length >= 2}
               onClick={() => handleSign(index)}
               className={`mt-2 px-3 py-1 rounded text-sm ${
-                !walletAddress || alreadySigned
+                !walletAddress || alreadySigned || doc.signatures.length >= 2
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-gray-800 text-white hover:bg-gray-700'
               }`}
             >
-              {walletAddress
-                ? alreadySigned
-                  ? '✔️ Já assinado'
-                  : '✍️ Assinar Documento'
-                : '🔗 Conecte a carteira'}
+              {alreadySigned
+                ? '✔️ Já assinado por você'
+                : doc.signatures.length >= 2
+                ? '🔒 Assinaturas completas'
+                : '✍️ Assinar Documento'}
             </button>
 
-            <p className="text-xs mt-2">Assinaturas:</p>
-            <ul className="text-xs text-gray-700 list-disc ml-4">
+            <ul className="text-xs text-gray-700 list-disc ml-4 mt-2">
               {doc.signatures.map((sig, i) => (
                 <li key={i}>{sig.wallet} – {sig.date}</li>
               ))}
