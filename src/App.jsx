@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// src/App.jsx
+import React, { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
@@ -39,19 +40,43 @@ export default function App() {
         />
         <Route
           path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+          element={
+            user ? (
+              <Suspense fallback={<div className="text-center mt-20 text-gray-500">🔄 Carregando painel...</div>}>
+                <Dashboard />
+              </Suspense>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
         <Route
           path="/explorer"
-          element={user ? <Explorer /> : <Navigate to="/login" replace />}
+          element={
+            user ? (
+              <Suspense fallback={<div className="text-center mt-20 text-gray-500">🔎 Carregando documentos...</div>}>
+                <Explorer />
+              </Suspense>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
         <Route
           path="/admin"
-          element={user ? <Admin /> : <Navigate to="/login" replace />} // ✅ Protegido
+          element={
+            user ? (
+              <Suspense fallback={<div className="text-center mt-20 text-gray-500">⚙️ Carregando painel admin...</div>}>
+                <Admin />
+              </Suspense>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
         <Route
           path="/validar/:hash"
-          element={<VerificationPage />} // ✅ Acesso público
+          element={<VerificationPage />}
         />
         <Route
           path="*"
