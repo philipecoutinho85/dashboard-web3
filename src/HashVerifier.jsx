@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db, auth } from '@/firebase';
 import QRCode from 'react-qr-code';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import useWallet from '@/hooks/useWallet';
 
 const ValidarDocumento = () => {
   const { hash } = useParams();
   const [documento, setDocumento] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [assinando, setAssinando] = useState(false);
   const cardRef = React.useRef();
+  const { walletAddress } = useWallet();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,8 +36,52 @@ const ValidarDocumento = () => {
     pdf.save(`documento-assinado-${new Date().toISOString().slice(0, 10)}-${hash}.pdf`);
   };
 
+  const handleSign = async () => {
+    if (!walletAddress || !auth.currentUser || !documento) return;
+
+    const currentEmail = auth.currentUser.email;
+    const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
+    const isMultipla = documento.assinaturaMultipla === 'múltipla';
+    const segundoEmail = documento.emailSegundo;
+    const ehSegundo = isMultipla && documento.signatures.length === 1;
+    const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
+
+    if (!autorizadoComoSegundo) {
+      alert('Você não está autorizado a assinar como segunda parte neste documento.');
+      return;
+    }
+
+    if (alreadySigned || documento.signatures.length >= 2) return;
+
+    const newSignature = {
+      wallet: walletAddress,
+      date: new Date().toLocaleString(),
+      email: currentEmail,
+    };
+
+    const updatedSignatures = [...documento.signatures, newSignature];
+    const updatedStatus = updatedSignatures.length >= 2 ? 'Assinado' : 'Pendente';
+
+    const updatedDoc = {
+      ...documento,
+      signatures: updatedSignatures,
+      status: updatedStatus
+    };
+
+    const ref = doc(db, 'documentos', hash);
+    await setDoc(ref, updatedDoc);
+    setDocumento(updatedDoc);
+  };
+
   if (loading) return <p className="text-center mt-10">Carregando documento...</p>;
   if (!documento) return <p className="text-center mt-10 text-red-500">Documento não encontrado.</p>;
+
+  const currentEmail = auth.currentUser?.email || '';
+  const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
+  const isMultipla = documento.assinaturaMultipla === 'múltipla';
+  const segundoEmail = documento.emailSegundo;
+  const ehSegundo = isMultipla && documento.signatures.length === 1;
+  const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
@@ -64,6 +111,17 @@ const ValidarDocumento = () => {
             Baixar PDF assinado
           </button>
         </div>
+
+        {!alreadySigned && documento.signatures.length < 2 && autorizadoComoSegundo && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleSign}
+              className="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition"
+            >
+              ✍️ Assinar como segundo signatário
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
