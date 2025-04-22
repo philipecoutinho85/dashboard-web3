@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import QRCode from 'react-qr-code';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import useWallet from '@/hooks/useWallet';
-import Header from '@/components/Header'; // ✅ Inclusão da barra superior
+import Header from '@/components/Header';
 
 const ValidarDocumento = () => {
   const { hash } = useParams();
@@ -16,15 +16,16 @@ const ValidarDocumento = () => {
   const { walletAddress } = useWallet();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const ref = doc(db, 'documentos', hash);
-      const snapshot = await getDoc(ref);
+    const ref = doc(db, 'documentos', hash);
+
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
       if (snapshot.exists()) {
         setDocumento(snapshot.data());
       }
       setLoading(false);
-    };
-    fetchData();
+    });
+
+    return () => unsubscribe();
   }, [hash]);
 
   const handleDownloadPDF = async () => {
@@ -65,12 +66,11 @@ const ValidarDocumento = () => {
     const updatedDoc = {
       ...documento,
       signatures: updatedSignatures,
-      status: updatedStatus,
+      status: updatedStatus
     };
 
     const ref = doc(db, 'documentos', hash);
     await setDoc(ref, updatedDoc);
-    setDocumento(updatedDoc);
   };
 
   if (loading) return <p className="text-center mt-10">Carregando documento...</p>;
@@ -85,7 +85,7 @@ const ValidarDocumento = () => {
 
   return (
     <>
-      <Header /> {/* ✅ Exibe barra superior */}
+      <Header />
       <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
         <div ref={cardRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300">
           <h2 className="text-2xl font-semibold text-center mb-4 text-black">Validação de Documento</h2>
