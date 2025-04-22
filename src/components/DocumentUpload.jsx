@@ -143,9 +143,25 @@ const DocumentUpload = ({ docs, setDocs }) => {
             <p className="text-xs mt-1">Assinaturas: {doc.signatures.length} de 2</p>
 
             {doc.assinaturaMultipla === 'múltipla' && doc.emailSegundo && (
-              <p className="text-xs text-gray-500 mt-1">
-                Segundo signatário: <strong>{doc.emailSegundo}</strong>
-              </p>
+              <>
+                <p className="text-xs text-gray-500 mt-1">
+                  Segundo signatário: <strong>{doc.emailSegundo}</strong>
+                </p>
+
+                {doc.signatures.length < 2 && (
+                  <div className="mt-2">
+                    <button
+                      className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl"
+                      onClick={() => alert(`Convite enviado para ${doc.emailSegundo}`)}
+                    >
+                      📩 Enviar convite para segundo signatário
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aguardando assinatura de: <strong>{doc.emailSegundo}</strong>
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             <button
@@ -155,7 +171,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
                 doc.signatures.length >= 2
               }
               onClick={() => handleSign(index)}
-              className={`mt-2 px-3 py-1 rounded text-sm ${
+              className={`mt-4 px-3 py-1 rounded text-sm ${
                 !walletAddress || alreadySigned || doc.signatures.length >= 2
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-gray-800 text-white hover:bg-gray-700'
