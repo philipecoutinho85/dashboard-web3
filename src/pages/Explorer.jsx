@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -11,13 +11,13 @@ const Explorer = () => {
   const [filtroStatus, setFiltroStatus] = useState('todos');
 
   useEffect(() => {
-    const fetchDocumentos = async () => {
-      const snapshot = await getDocs(collection(db, 'documentos'));
+    const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setDocumentos(data);
       setLoading(false);
-    };
-    fetchDocumentos();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const documentosFiltrados = documentos.filter((doc) => {
