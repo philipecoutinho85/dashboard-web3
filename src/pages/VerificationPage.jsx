@@ -1,88 +1,98 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '@/firebase';
 import QRCode from 'react-qr-code';
+import Header from '@/components/Header';
 import useWallet from '@/hooks/useWallet';
-import { downloadPDF } from '@/utils/pdfGenerator'; // Certifique-se que esse util está OK
 
 export default function VerificationPage() {
   const { hash } = useParams();
   const [docData, setDocData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { walletAddress, connectWallet } = useWallet();
-  const userEmail = auth.currentUser?.email || '';
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDoc = async () => {
       const ref = doc(db, 'documentos', hash);
-      const snapshot = await getDoc(ref);
-      if (snapshot.exists()) {
-        setDocData(snapshot.data());
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setDocData(snap.data());
       }
+      setLoading(false);
     };
-    fetchData();
+
+    fetchDoc();
   }, [hash]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        🔄 Carregando verificação...
+      </div>
+    );
+  }
+
   if (!docData) {
-    return <p className="p-10 text-center text-gray-500">Carregando documento...</p>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        ❌ Documento não encontrado.
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header igual ao dashboard/explorer */}
-      <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b">
-        <div>
-          <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
-          <p className="text-sm text-gray-500">Bem-vindo, {userEmail}</p>
-          {walletAddress && (
-            <p className="text-xs text-green-600 mt-1">
-              Carteira: <span className="font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
-            </p>
-          )}
-        </div>
-        <div className="flex items-center space-x-4">
-          <a href="/" className="text-sm hover:underline flex items-center">🏠 Dashboard</a>
-          <a href="/explorer" className="text-sm hover:underline flex items-center">📂 Explorer</a>
-          <button
-            onClick={connectWallet}
-            className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
+      <Header walletAddress={walletAddress} connectWallet={connectWallet} />
+
+      <div className="max-w-2xl mx-auto mt-10 bg-white p-8 rounded-xl shadow">
+        <h2 className="text-xl font-bold text-center mb-6">Verificação de Documento</h2>
+
+        <div className="text-center mb-4">
+          <a
+            href={docData.cidUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-700 text-lg font-medium hover:underline"
           >
-            {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
-          </button>
-          <a href="/login" className="text-sm text-rose-500 hover:underline">Sair</a>
+            📄 {docData.name}
+          </a>
         </div>
-      </div>
 
-      {/* Conteúdo da verificação */}
-      <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-xl shadow">
-        <h2 className="text-xl font-semibold text-center mb-4">Verificação de Documento</h2>
+        <p className="text-sm text-center mb-1">
+          <span className="text-gray-600">Status:</span>{' '}
+          <span className={docData.status === 'Assinado' ? 'text-green-600' : 'text-yellow-600'}>
+            {docData.status}
+          </span>
+        </p>
+        <p className="text-xs text-center text-gray-400 mb-4">Hash: {docData.hash}</p>
 
-        <h3 className="text-lg font-bold text-indigo-700 mb-1">📄 {docData.name}</h3>
-        <p className="text-sm text-green-700 font-medium">Status: {docData.status}</p>
-        <p className="text-xs text-gray-500 mt-1">Hash: {docData.hash}</p>
-
-        <p className="text-sm mt-3 font-semibold">Assinaturas: {docData.signatures?.length || 0}</p>
-        <ul className="text-xs text-gray-700 list-disc ml-4 mt-1">
+        <p className="text-sm text-center font-medium mb-2">
+          Assinaturas: {docData.signatures?.length || 0}
+        </p>
+        <ul className="text-xs text-gray-700 list-disc list-inside mb-4">
           {docData.signatures?.map((sig, i) => (
             <li key={i}>{sig.wallet} – {sig.date}</li>
           ))}
         </ul>
 
-        <div className="mt-6 mb-4 flex justify-center">
-          <QRCode value={`https://dashboard-web3.onrender.com/validar/${docData.hash}`} size={160} />
+        <div className="flex justify-center">
+          <QRCode value={docData.hash} size={128} />
         </div>
 
-        <p className="text-center text-xs text-gray-400 mb-4">
+        <p className="text-xs text-center text-gray-400 mt-3">
           Escaneie o QR Code para validar este documento em outro dispositivo
         </p>
 
-        <div className="flex justify-center">
-          <button
-            onClick={() => downloadPDF(docData)}
-            className="bg-black text-white px-6 py-2 rounded text-sm hover:bg-gray-800"
+        <div className="text-center mt-6">
+          <a
+            href={`/api/pdf/${docData.hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 text-sm"
           >
             📥 Baixar PDF Assinado
-          </button>
+          </a>
         </div>
       </div>
     </div>
