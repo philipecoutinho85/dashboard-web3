@@ -43,8 +43,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
   };
 
   const handleSign = async (index) => {
-    if (!walletAddress) return;
+    if (!walletAddress || !auth.currentUser) return;
 
+    const currentEmail = auth.currentUser.email;
     const docToSign = docs[index];
     const ref = doc(db, 'documentos', docToSign.hash);
     const snapshot = await getDoc(ref);
@@ -52,11 +53,24 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
     const existingDoc = snapshot.data();
     const alreadySigned = existingDoc.signatures.some(sig => sig.wallet === walletAddress);
+
+    const isMultipla = existingDoc.assinaturaMultipla === 'múltipla';
+    const segundoEmail = existingDoc.emailSegundo;
+
+    const ehSegundo = isMultipla && existingDoc.signatures.length === 1;
+    const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
+
+    if (!autorizadoComoSegundo) {
+      alert('Você não está autorizado a assinar como segunda parte neste documento.');
+      return;
+    }
+
     if (alreadySigned || existingDoc.signatures.length >= 2) return;
 
     const newSignature = {
       wallet: walletAddress,
-      date: new Date().toLocaleString()
+      date: new Date().toLocaleString(),
+      email: currentEmail,
     };
 
     const updatedSignatures = [...existingDoc.signatures, newSignature];
@@ -128,8 +142,18 @@ const DocumentUpload = ({ docs, setDocs }) => {
             <p className="text-xs text-gray-400">Hash: {doc.hash}</p>
             <p className="text-xs mt-1">Assinaturas: {doc.signatures.length} de 2</p>
 
+            {doc.assinaturaMultipla === 'múltipla' && doc.emailSegundo && (
+              <p className="text-xs text-gray-500 mt-1">
+                Segundo signatário: <strong>{doc.emailSegundo}</strong>
+              </p>
+            )}
+
             <button
-              disabled={!walletAddress || alreadySigned || doc.signatures.length >= 2}
+              disabled={
+                !walletAddress ||
+                alreadySigned ||
+                doc.signatures.length >= 2
+              }
               onClick={() => handleSign(index)}
               className={`mt-2 px-3 py-1 rounded text-sm ${
                 !walletAddress || alreadySigned || doc.signatures.length >= 2
@@ -147,7 +171,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
             {doc.signatures.length > 0 && (
               <ul className="text-xs text-gray-700 list-disc ml-4 mt-2">
                 {doc.signatures.map((sig, i) => (
-                  <li key={i}>{sig.wallet} – {sig.date}</li>
+                  <li key={i}>
+                    {sig.wallet} – {sig.date} {sig.email && `(email: ${sig.email})`}
+                  </li>
                 ))}
               </ul>
             )}
