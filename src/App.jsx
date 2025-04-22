@@ -7,7 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 
-import ExplorerDocumentos from './pages/ExplorerDocumentos';
+import ExplorerDocumentos from './pages/Explorer';
 import ValidarDocumento from './pages/ValidarDocumento';
 
 export default function App() {
