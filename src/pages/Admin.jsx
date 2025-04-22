@@ -1,117 +1,70 @@
-// ✅ Admin.jsx atualizado com Header funcional e multiassinaturas
 import React, { useEffect, useState } from 'react';
-import { auth, db } from '@/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-import useWallet from '@/hooks/useWallet';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase';
 import Header from '@/components/Header';
 
-export default function Admin() {
-  const [docs, setDocs] = useState([]);
-  const navigate = useNavigate();
-  const { walletAddress, connectWallet } = useWallet();
-  const userEmail = auth.currentUser?.email || '';
-
-  const isAdmin = userEmail === 'philipe@web3.com';
+const Admin = () => {
+  const [documentos, setDocumentos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDocs = async () => {
-      if (!isAdmin) return;
-      const snapshot = await getDocs(collection(db, 'documentos'));
-      const documentos = snapshot.docs.map((d) => d.data());
-      setDocs(documentos);
-    };
+    const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setDocumentos(data);
+      setLoading(false);
+    });
 
-    fetchDocs();
-  }, [isAdmin]);
+    return () => unsubscribe();
+  }, []);
 
-  const handleDelete = async (hash) => {
-    await deleteDoc(doc(db, 'documentos', hash));
-    const updated = docs.filter((d) => d.hash !== hash);
-    setDocs(updated);
-
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updated));
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
+      await deleteDoc(doc(db, 'documentos', id));
     }
   };
 
-  const handleVerify = (hash) => {
-    navigate(`/validar/${hash}`);
-  };
-
-  const totalDocs = docs.length;
-  const signedDocs = docs.filter(doc => (doc.signatures?.length || 0) >= 2).length;
-  const unsignedDocs = totalDocs - signedDocs;
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500 text-sm">
-        Acesso restrito ao administrador.
-      </div>
-    );
-  }
+  if (loading) return <p className="text-center mt-10">Carregando documentos...</p>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header walletAddress={walletAddress} connectWallet={connectWallet} />
+    <>
+      <Header />
+      <div className="max-w-6xl mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-6 text-center">🔐 Painel Administrativo</h1>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <h2 className="text-lg font-semibold mb-4">📊 Painel Administrativo</h2>
+        {documentos.length === 0 ? (
+          <p className="text-center text-gray-500">Nenhum documento encontrado.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {documentos.map((doc) => (
+              <div key={doc.id} className="bg-white shadow border rounded-xl p-4">
+                <h3 className="text-md font-semibold text-indigo-700">{doc.name}</h3>
+                <p className="text-xs text-gray-500 mb-1">Status: {doc.status}</p>
+                <p className="text-xs break-words text-gray-400 mb-2">Hash: {doc.hash}</p>
+                <p className="text-xs text-gray-600">Assinaturas: {doc.signatures?.length || 0} de 2</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Total de Documentos</h3>
-            <p className="text-xl font-bold text-gray-800">{totalDocs}</p>
+                <div className="mt-2 flex justify-between">
+                  <a
+                    href={`/validar/${doc.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                  >
+                    Ver
+                  </a>
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Total com 2 Assinaturas</h3>
-            <p className="text-xl font-bold text-green-600">{signedDocs}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Pendentes</h3>
-            <p className="text-xl font-bold text-yellow-600">{unsignedDocs}</p>
-          </div>
-        </div>
-
-        <div className="overflow-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow text-sm">
-            <thead className="bg-gray-100 text-left">
-              <tr>
-                <th className="px-4 py-2">Nome</th>
-                <th className="px-4 py-2">Hash</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Assinaturas</th>
-                <th className="px-4 py-2 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {docs.map((doc, index) => (
-                <tr key={index} className="border-t">
-                  <td className="px-4 py-2">{doc.name}</td>
-                  <td className="px-4 py-2 break-all text-gray-600">{doc.hash}</td>
-                  <td className="px-4 py-2">{doc.status}</td>
-                  <td className="px-4 py-2">{doc.signatures?.length || 0} / 2</td>
-                  <td className="px-4 py-2 text-center space-x-2">
-                    <button
-                      onClick={() => handleVerify(doc.hash)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      🔍 Verificar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(doc.hash)}
-                      className="text-red-600 hover:underline"
-                    >
-                      🗑️ Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        )}
       </div>
-    </div>
+    </>
   );
-}
+};
+
+export default Admin;
