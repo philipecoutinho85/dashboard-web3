@@ -41,7 +41,7 @@ const Admin = () => {
                 <p className="text-xs text-gray-500 mb-1">Status: {doc.status}</p>
                 <p className="text-xs break-words text-gray-400 mb-2">Hash: {doc.hash}</p>
                 <p className="text-xs text-gray-600">Assinaturas: {doc.signatures?.length || 0} de 2</p>
-
+                <p className="text-xs text-gray-400 mb-1">Criado por: {doc.uid || 'desconhecido'}</p>
                 <div className="mt-2 flex justify-between">
                   <a
                     href={`/validar/${doc.hash}`}
