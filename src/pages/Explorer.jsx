@@ -1,4 +1,4 @@
-// ✅ Explorer.jsx atualizado com Header funcional
+// ✅ Explorer.jsx atualizado com suporte a 2 de 2 assinaturas
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '@/firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -68,10 +68,11 @@ export default function Explorer() {
             {filteredDocs.map((doc, index) => (
               <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-5">
                 <h2 className="text-lg font-semibold text-indigo-700 mb-2">📄 {doc.name}</h2>
-                <p className="text-sm text-yellow-600 font-medium">Status: {doc.status}</p>
+                <p className="text-sm text-yellow-600 font-medium">
+                  Status: {doc.status} ({doc.signatures?.length || 0}/2 assinaturas)
+                </p>
                 <p className="text-xs text-gray-500 mt-1 break-all">Hash: {doc.hash}</p>
-                <p className="text-sm mt-2">Assinaturas: {doc.signatures?.length || 0}</p>
-                <ul className="text-xs text-gray-600 list-disc ml-4 mt-1">
+                <ul className="text-xs text-gray-600 list-disc ml-4 mt-2">
                   {doc.signatures?.length > 0 ? (
                     doc.signatures.map((sig, i) => (
                       <li key={i}>{sig.wallet} – {sig.date}</li>
