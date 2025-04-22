@@ -1,8 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { db, auth } from '@/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-import useWallet from '@/hooks/useWallet';
+import Header from '@/components/Header';
 
 export default function Explorer() {
   const [docs, setDocs] = useState([]);
