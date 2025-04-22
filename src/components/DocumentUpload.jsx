@@ -77,10 +77,10 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
   return (
     <div>
-      <form onSubmit={handleUpload} className="mb-4">
-        <input type="file" onChange={handleFileChange} className="mb-2" />
+      <form onSubmit={handleUpload} className="mb-4 flex flex-col sm:flex-row items-center gap-4">
+        <input type="file" onChange={handleFileChange} className="text-sm" />
         <button type="submit" className="bg-black text-white px-4 py-2 rounded text-sm">
-          Upload
+          📤 Enviar
         </button>
       </form>
 
@@ -110,11 +110,13 @@ const DocumentUpload = ({ docs, setDocs }) => {
                 : '✍️ Assinar Documento'}
             </button>
 
-            <ul className="text-xs text-gray-700 list-disc ml-4 mt-2">
-              {doc.signatures.map((sig, i) => (
-                <li key={i}>{sig.wallet} – {sig.date}</li>
-              ))}
-            </ul>
+            {doc.signatures.length > 0 && (
+              <ul className="text-xs text-gray-700 list-disc ml-4 mt-2">
+                {doc.signatures.map((sig, i) => (
+                  <li key={i}>{sig.wallet} – {sig.date}</li>
+                ))}
+              </ul>
+            )}
           </div>
         );
       })}
