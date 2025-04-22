@@ -1,4 +1,9 @@
-// src/pages/Admin.jsx
+// ✅ Admin.jsx atualizado com Header funcional
+import React, { useEffect, useState } from 'react';
+import { auth, db } from '@/firebase';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import useWallet from '@/hooks/useWallet';
 import Header from '@/components/Header';
 
 export default function Admin() {
@@ -24,6 +29,7 @@ export default function Admin() {
     await deleteDoc(doc(db, 'documentos', hash));
     const updated = docs.filter((d) => d.hash !== hash);
     setDocs(updated);
+
     const uid = auth.currentUser?.uid;
     if (uid) {
       localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updated));
@@ -48,29 +54,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b">
-        <div>
-          <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
-          <p className="text-sm text-gray-500">Bem-vindo, {userEmail}</p>
-          {walletAddress && (
-            <p className="text-xs text-green-600 mt-1">
-              Carteira: <span className="font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
-            </p>
-          )}
-        </div>
-        <div className="flex items-center space-x-4">
-          <a href="/dashboard" className="text-sm hover:underline">🏠 Dashboard</a>
-          <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
-          <a href="/admin" className="text-sm font-bold text-rose-600 hover:underline">🛠️ Admin</a>
-          <button
-            onClick={connectWallet}
-            className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
-          >
-            {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
-          </button>
-          <a href="/login" className="text-sm text-rose-500 hover:underline">Sair</a>
-        </div>
-      </div>
+      <Header walletAddress={walletAddress} connectWallet={connectWallet} />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h2 className="text-lg font-semibold mb-4">📊 Painel Administrativo</h2>
