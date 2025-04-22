@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -6,9 +5,10 @@ import { auth } from './firebase';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Explorer from './pages/Explorer';
-import VerificationPage from './pages/VerificationPage';
 import Admin from './pages/Admin';
+
+import ExplorerDocumentos from './pages/ExplorerDocumentos';
+import ValidarDocumento from './pages/ValidarDocumento';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -44,7 +44,7 @@ export default function App() {
         />
         <Route
           path="/explorer"
-          element={user ? <Explorer /> : <Navigate to="/login" replace />}
+          element={user ? <ExplorerDocumentos /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/admin"
@@ -52,7 +52,7 @@ export default function App() {
         />
         <Route
           path="/validar/:hash"
-          element={<VerificationPage />}
+          element={<ValidarDocumento />}
         />
         <Route
           path="*"
