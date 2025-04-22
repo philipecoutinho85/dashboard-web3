@@ -1,3 +1,4 @@
+// ✅ VerificationPage.jsx atualizado com Header e layout consistente
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '@/firebase';
@@ -76,11 +77,13 @@ export default function VerificationPage() {
           ))}
         </ul>
 
-        <div className="flex justify-center">
-          <QRCode value={docData.hash} size={128} />
+        <div className="flex justify-center my-4">
+          <div className="bg-white p-4 rounded-lg border shadow">
+            <QRCode value={window.location.href} size={128} />
+          </div>
         </div>
 
-        <p className="text-xs text-center text-gray-400 mt-3">
+        <p className="text-xs text-center text-gray-400">
           Escaneie o QR Code para validar este documento em outro dispositivo
         </p>
 
