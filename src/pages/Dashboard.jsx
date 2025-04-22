@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '@/components/Header';
-import useWallet from '@/hooks/useWallet';
+// import Header from '@/components/Header';
+// import useWallet from '@/hooks/useWallet';
 
 export default function Dashboard() {
   const { walletAddress, connectWallet } = useWallet();
