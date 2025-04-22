@@ -1,52 +1,19 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import useWallet from '@/hooks/useWallet';
 
-export default function useWallet() {
-  const [walletAddress, setWalletAddress] = useState('');
+export default function Dashboard() {
+  const { walletAddress, connectWallet } = useWallet();
 
-  const connectWallet = async () => {
-    if (!window.ethereum) {
-      alert('MetaMask não encontrada');
-      return;
-    }
-
-    try {
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-      if (accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-      }
-    } catch (err) {
-      console.error('Erro ao conectar carteira:', err);
-    }
-  };
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      if (window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-          }
-        } catch (err) {
-          console.error('Erro ao verificar contas:', err);
-        }
-      }
-    };
-
-    checkConnection();
-
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        setWalletAddress(accounts[0] || '');
-      });
-
-      window.ethereum.on('disconnect', () => {
-        setWalletAddress('');
-      });
-    }
-  }, []);
-
-  return { walletAddress, connectWallet };
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <h1 className="text-xl text-gray-700 mb-4">✅ Dashboard com useWallet</h1>
+      <p className="text-sm text-gray-600 mb-4">Carteira: {walletAddress || 'não conectada'}</p>
+      <button
+        onClick={connectWallet}
+        className="bg-rose-500 text-white px-4 py-2 rounded hover:bg-rose-600"
+      >
+        Conectar Carteira
+      </button>
+    </div>
+  );
 }
