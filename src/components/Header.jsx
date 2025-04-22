@@ -1,4 +1,4 @@
-izável)
+// src/components/Header.jsx
 import React from 'react';
 import { auth } from '@/firebase';
 
@@ -6,7 +6,7 @@ export default function Header({ walletAddress, connectWallet }) {
   const userEmail = auth.currentUser?.email || '';
 
   return (
-    <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b">
+    <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b mb-6 rounded-xl">
       <div>
         <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
         <p className="text-sm text-gray-500">Bem-vindo, {userEmail}</p>
@@ -16,6 +16,7 @@ export default function Header({ walletAddress, connectWallet }) {
           </p>
         )}
       </div>
+
       <div className="flex items-center space-x-4">
         <a href="/dashboard" className="text-sm hover:underline">🏠 Dashboard</a>
         <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
