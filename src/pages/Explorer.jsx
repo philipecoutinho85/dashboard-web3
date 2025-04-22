@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { Link } from 'react-router-dom';
-import Header from '@/components/Header'; // ✅ importação do header
+import Header from '@/components/Header';
 
 const Explorer = () => {
   const [documentos, setDocumentos] = useState([]);
@@ -13,7 +13,7 @@ const Explorer = () => {
   useEffect(() => {
     const fetchDocumentos = async () => {
       const snapshot = await getDocs(collection(db, 'documentos'));
-      const data = snapshot.docs.map(doc => doc.data());
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setDocumentos(data);
       setLoading(false);
     };
@@ -21,9 +21,13 @@ const Explorer = () => {
   }, []);
 
   const documentosFiltrados = documentos.filter((doc) => {
-    const matchBusca = doc.name.toLowerCase().includes(busca.toLowerCase()) ||
-      doc.hash.toLowerCase().includes(busca.toLowerCase()) ||
-      doc.signatures?.some(sig => sig.email?.toLowerCase().includes(busca.toLowerCase()));
+    const nome = doc.name?.toLowerCase() || '';
+    const hash = doc.hash?.toLowerCase() || '';
+    const emailAssinaturas = doc.signatures?.map(sig => sig.email?.toLowerCase() || '').join(' ') || '';
+
+    const matchBusca = [nome, hash, emailAssinaturas].some(campo =>
+      campo.includes(busca.toLowerCase().trim())
+    );
 
     const matchStatus =
       filtroStatus === 'todos' ||
@@ -37,7 +41,7 @@ const Explorer = () => {
 
   return (
     <>
-      <Header /> {/* ✅ barra superior visível */}
+      <Header />
       <div className="max-w-5xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-6 text-center">📂 Explorer de Documentos Assinados</h1>
 
@@ -49,6 +53,7 @@ const Explorer = () => {
             onChange={(e) => setBusca(e.target.value)}
             className="w-full sm:w-2/3 px-4 py-2 border border-gray-300 rounded-md"
           />
+
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
