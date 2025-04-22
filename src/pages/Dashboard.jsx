@@ -1,4 +1,4 @@
-// src/pages/Dashboard.jsx
+// ✅ Dashboard.jsx atualizado com Header funcional e layout consistente
 import React, { useEffect, useState } from 'react';
 import { auth } from '@/firebase';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -27,7 +27,7 @@ export default function Dashboard() {
         <Header walletAddress={walletAddress} connectWallet={connectWallet} />
 
         <div className="bg-white p-6 rounded-xl shadow mb-10">
-          <h2 className="text-lg font-semibold mb-4">Upload de Documento</h2>
+          <h2 className="text-lg font-semibold mb-4">📤 Upload de Documento</h2>
           <DocumentUpload docs={docs} setDocs={setDocs} walletAddress={walletAddress} />
         </div>
 
