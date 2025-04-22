@@ -1,23 +1,15 @@
+// src/components/DocumentList.jsx
 import React from 'react';
-import { auth, db } from '@/firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { auth } from '@/firebase';
 
 export default function DocumentList({ docs, setDocs }) {
-  const handleDelete = async (index) => {
-    const updatedDocs = [...docs];
-    const [removed] = updatedDocs.splice(index, 1);
+  const handleDelete = (index) => {
+    const updatedDocs = docs.filter((_, i) => i !== index);
     setDocs(updatedDocs);
 
     const uid = auth.currentUser?.uid;
     if (uid) {
       localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
-    }
-
-    // Remove do Firestore
-    try {
-      await deleteDoc(doc(db, 'documentos', removed.hash));
-    } catch (err) {
-      console.error('Erro ao excluir do Firestore:', err);
     }
   };
 
@@ -33,8 +25,10 @@ export default function DocumentList({ docs, setDocs }) {
           className="bg-white shadow-md border border-gray-200 rounded-xl p-5"
         >
           <h2 className="text-lg font-semibold text-indigo-700 mb-2">📄 {doc.name}</h2>
-          <p className="text-sm text-yellow-600 font-medium">Status: {doc.status}</p>
-          <p className="text-xs text-gray-500 mt-1 break-all">Hash: {doc.hash}</p>
+          <p className="text-sm text-yellow-600 font-medium">
+            Status: {doc.status} ({doc.signatures.length}/2 assinaturas)
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Hash: {doc.hash}</p>
 
           {doc.signatures?.length > 0 && (
             <ul className="mt-2 text-xs text-gray-600 list-disc ml-4">
@@ -48,7 +42,7 @@ export default function DocumentList({ docs, setDocs }) {
             onClick={() => handleDelete(index)}
             className="mt-3 text-sm text-red-600 hover:underline"
           >
-            🗑️ Excluir Documento
+            🗑️ Excluir
           </button>
         </div>
       ))}
