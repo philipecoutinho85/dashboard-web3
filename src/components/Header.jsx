@@ -1,60 +1,36 @@
+// src/components/Header.jsx
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase';
+import useWallet from '@/hooks/useWallet';
 
-export default function Header({ walletAddress, connectWallet }) {
-  const navigate = useNavigate();
-  const user = auth.currentUser;
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/login');
-  };
-
-  const truncateAddress = (address) =>
-    address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
+export default function Header() {
+  const { walletAddress, connectWallet } = useWallet();
+  const userEmail = auth.currentUser?.email || '';
 
   return (
-    <header className="flex justify-between items-center mb-10 border-b bg-white px-6 py-4 shadow-md">
+    <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b">
       <div>
-        <h1 className="text-2xl font-bold text-[#ff385c]">HashSign</h1>
-        {user?.email && (
-          <p className="text-sm text-gray-700">Bem-vindo, {user.email}</p>
-        )}
+        <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
+        <p className="text-sm text-gray-500">Bem-vindo, {userEmail}</p>
         {walletAddress && (
-          <p className="text-sm text-green-600">
-            Carteira: {truncateAddress(walletAddress)}
+          <p className="text-xs text-green-600 mt-1">
+            Carteira: <span className="font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
           </p>
         )}
       </div>
 
-      <div className="flex gap-4 items-center">
-        <Link to="/dashboard" className="text-sm text-black hover:underline">
-          🏠 Dashboard
-        </Link>
-        <Link to="/explorer" className="text-sm text-black hover:underline">
-          📁 Explorer
-        </Link>
-
-        {connectWallet && (
-          <button
-            onClick={connectWallet}
-            className="bg-[#ff385c] text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90 transition"
-          >
-            {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
-          </button>
-        )}
-
-        {user && (
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-500 hover:underline"
-          >
-            Sair
-          </button>
-        )}
+      <div className="flex items-center space-x-4">
+        <a href="/dashboard" className="text-sm hover:underline flex items-center">🏠 Dashboard</a>
+        <a href="/explorer" className="text-sm hover:underline flex items-center">📂 Explorer</a>
+        <a href="/admin" className="text-sm hover:underline flex items-center">🛠️ Admin</a>
+        <button
+          onClick={connectWallet}
+          className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
+        >
+          {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
+        </button>
+        <a href="/login" className="text-sm text-rose-500 hover:underline">Sair</a>
       </div>
-    </header>
+    </div>
   );
 }
