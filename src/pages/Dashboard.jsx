@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import { db, auth } from '@/firebase';
+import { auth, db } from '@/firebase';
 import Header from '@/components/Header';
 
 const Dashboard = () => {
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = auth.currentUser;
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((firebaseUser) => {
+      setUser(firebaseUser);
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -14,7 +22,7 @@ const Dashboard = () => {
     const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
       const data = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((doc) => doc.uid === user.uid); // opcional: só documentos do usuário logado
+        .filter((doc) => doc.uid === user.uid); // filtra pelo UID
 
       setDocumentos(data);
       setLoading(false);
