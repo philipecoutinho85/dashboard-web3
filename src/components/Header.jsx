@@ -1,9 +1,9 @@
-// src/components/Header.jsx
 import React from 'react';
 import { auth } from '@/firebase';
 
 export default function Header({ walletAddress, connectWallet }) {
   const userEmail = auth.currentUser?.email || '';
+  const isAdmin = userEmail === 'philipe@web3.com';
 
   return (
     <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b mb-6 rounded-xl">
@@ -20,7 +20,9 @@ export default function Header({ walletAddress, connectWallet }) {
       <div className="flex items-center space-x-4">
         <a href="/dashboard" className="text-sm hover:underline">🏠 Dashboard</a>
         <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
-        <a href="/admin" className="text-sm hover:underline">🛠️ Admin</a>
+        {isAdmin && (
+          <a href="/admin" className="text-sm hover:underline font-medium text-rose-500">🛠️ Admin</a>
+        )}
         <button
           onClick={connectWallet}
           className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
