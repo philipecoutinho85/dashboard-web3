@@ -45,6 +45,7 @@ export default function Explorer() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header padrão */}
+      <Header walletAddress={walletAddress} connectWallet={connectWallet} />
       <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b">
         <div>
           <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
