@@ -44,7 +44,7 @@ export default function App() {
         />
         <Route
           path="/explorer"
-          element={user ? <ExplorerDocumentos /> : <Navigate to="/login" replace />}
+          element={user ? <Explorer /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/admin"
