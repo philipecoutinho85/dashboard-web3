@@ -79,8 +79,8 @@ const DocumentUpload = ({ docs, setDocs }) => {
     <div>
       <form onSubmit={handleUpload} className="mb-4 flex flex-col sm:flex-row items-center gap-4">
         <input type="file" onChange={handleFileChange} className="text-sm" />
-        <button type="submit" className="bg-black text-white px-4 py-2 rounded text-sm">
-          📤 Enviar
+        <button className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition">
+          Upload
         </button>
       </form>
 
