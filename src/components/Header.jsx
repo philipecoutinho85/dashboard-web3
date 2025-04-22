@@ -21,7 +21,7 @@ export default function Header({ walletAddress, connectWallet }) {
         <a href="/dashboard" className="text-sm hover:underline">🏠 Dashboard</a>
         <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
         {isAdmin && (
-          <a href="/admin" className="text-sm hover:underline font-medium text-rose-500">🛠️ Admin</a>
+          <a href="/admin" className="text-sm hover:underline">🛠️ Admin</a>
         )}
         <button
           onClick={connectWallet}
