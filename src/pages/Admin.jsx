@@ -1,4 +1,4 @@
-// ✅ Admin.jsx atualizado com Header funcional
+// ✅ Admin.jsx atualizado com Header funcional e multiassinaturas
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '@/firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
@@ -41,7 +41,7 @@ export default function Admin() {
   };
 
   const totalDocs = docs.length;
-  const signedDocs = docs.filter(doc => doc.status === 'Assinado').length;
+  const signedDocs = docs.filter(doc => (doc.signatures?.length || 0) >= 2).length;
   const unsignedDocs = totalDocs - signedDocs;
 
   if (!isAdmin) {
@@ -65,7 +65,7 @@ export default function Admin() {
             <p className="text-xl font-bold text-gray-800">{totalDocs}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border text-center">
-            <h3 className="text-sm text-gray-500">Assinados</h3>
+            <h3 className="text-sm text-gray-500">Total com 2 Assinaturas</h3>
             <p className="text-xl font-bold text-green-600">{signedDocs}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow border text-center">
@@ -91,7 +91,7 @@ export default function Admin() {
                   <td className="px-4 py-2">{doc.name}</td>
                   <td className="px-4 py-2 break-all text-gray-600">{doc.hash}</td>
                   <td className="px-4 py-2">{doc.status}</td>
-                  <td className="px-4 py-2">{doc.signatures?.length || 0}</td>
+                  <td className="px-4 py-2">{doc.signatures?.length || 0} / 2</td>
                   <td className="px-4 py-2 text-center space-x-2">
                     <button
                       onClick={() => handleVerify(doc.hash)}
