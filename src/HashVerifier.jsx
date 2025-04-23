@@ -93,16 +93,16 @@ const ValidarDocumento = () => {
   return (
     <>
       <Header />
-      <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-        <div ref={cardRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300">
-          <h2 className="text-2xl font-semibold text-center mb-4 text-black">📄 Verificação de Documento</h2>
+      <main className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 p-4">
+        <div ref={cardRef} className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xl border border-gray-200">
+          <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">📄 Verificação de Documento</h2>
           <p className="text-sm text-gray-700 mb-2">Nome: <strong>{documento.name}</strong></p>
           <p className="text-sm text-gray-700 mb-2">Hash: <span className="break-words text-xs">{documento.hash}</span></p>
           <p className="text-sm text-gray-700 mb-2">Status: <span className="text-green-600 font-medium">{documento.status}</span></p>
 
           {documento.signatures && documento.signatures.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm font-semibold text-black">Assinaturas:</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Assinaturas:</h3>
               <ul className="list-disc ml-4 text-sm text-gray-700 mt-1">
                 {documento.signatures.map((sig, index) => (
                   <li key={index}>{sig.wallet} — {sig.email || 'Sem e-mail'} — {sig.date}</li>
@@ -111,7 +111,7 @@ const ValidarDocumento = () => {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 justify-between items-center mt-6">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-center mt-6">
             <QRCode value={window.location.href} size={72} bgColor="#ffffff" fgColor="#000000" />
             <button
               onClick={handleDownloadPDF}
@@ -143,7 +143,10 @@ const ValidarDocumento = () => {
             <strong> Medida Provisória nº 2.200-2/2001</strong> — ICP-Brasil. Todas as assinaturas são auditáveis com registro imutável.
           </div>
         </div>
-      </div>
+      </main>
+      <footer className="text-center text-gray-500 text-xs py-6">
+        MVP desenvolvido por <strong>Philipe Coutinho</strong> — <a href="https://p.coutinho.com.br" target="_blank" className="underline hover:text-black">p.coutinho.com.br</a>
+      </footer>
     </>
   );
 };
