@@ -39,8 +39,11 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
-      <main className="flex-grow px-4 pb-28 pt-4 max-w-4xl mx-auto w-full">
-        <h1 className="text-2xl font-bold mb-6 text-center text-[#ff385c]">📁 Assinatura de Documentos</h1>
+      <main className="flex-grow px-4 pt-4 pb-20 max-w-4xl mx-auto w-full">
+        <h1 className="text-2xl font-bold mb-6 text-center text-[#ff385c]">
+          📁 Assinatura de Documentos
+        </h1>
+
         <DocumentUpload docs={documentos} setDocs={setDocumentos} />
 
         {loading ? (
@@ -59,30 +62,4 @@ const Dashboard = () => {
                     href={`/validar/${doc.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm bg-[#ff385c] text-white px-3 py-1 rounded hover:bg-red-500"
-                  >
-                    Ver
-                  </a>
-                  <button
-                    onClick={() => handleDelete(doc.id)}
-                    className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-12 text-center text-xs text-gray-500 dark:text-gray-400">
-          🔐 Este sistema utiliza blockchain e validação digital. Todas as assinaturas possuem respaldo jurídico conforme a Medida Provisória 2.200-2/2001. <br />
-          MVP desenvolvido por Philipe Coutinho — <a href="https://p.coutinho.com.br" className="underline text-[#ff385c]">p.coutinho.com.br</a>
-        </div>
-      </main>
-      <BottomNav />
-    </div>
-  );
-};
-
-export default Dashboard;
+                    className="text-sm bg-[#ff385c] text-white px-3 py-
