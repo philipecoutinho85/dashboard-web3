@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import Header from '@/components/Header';
+import DocumentUpload from '@/components/DocumentUpload';
 
 const Dashboard = () => {
   const [documentos, setDocumentos] = useState([]);
@@ -45,10 +46,12 @@ const Dashboard = () => {
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-6 text-center">📁 Meus Documentos</h1>
 
+        <DocumentUpload docs={documentos} setDocs={setDocumentos} />
+
         {documentos.length === 0 ? (
           <p className="text-center text-gray-500">Você ainda não enviou nenhum documento.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
             {documentos.map((doc) => (
               <div key={doc.id} className="bg-white shadow border rounded-xl p-4">
                 <h3 className="text-md font-semibold text-indigo-700">{doc.name}</h3>
