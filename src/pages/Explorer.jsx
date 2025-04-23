@@ -1,3 +1,4 @@
+// Explorer.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -41,7 +42,7 @@ const ExplorerDocumentos = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
-      <main className="flex-grow px-4 pt-4 max-w-6xl mx-auto w-full">
+      <main className="flex-grow px-4 pt-4 pb-20 max-w-6xl mx-auto w-full">
         <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-[#ff385c] flex justify-center items-center gap-2">
           📁 Explorer de Documentos Assinados
         </h1>
@@ -88,11 +89,9 @@ const ExplorerDocumentos = () => {
         {documentosFiltrados.length === 0 && (
           <p className="text-center text-gray-500 mt-6">Nenhum documento encontrado com os critérios aplicados.</p>
         )}
-
-        <div className="mt-12">
-          <Footer />
-        </div>
       </main>
+
+      <Footer />
       <BottomNav />
     </div>
   );
