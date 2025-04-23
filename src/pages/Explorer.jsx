@@ -1,4 +1,3 @@
-// Explorer.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -89,8 +88,11 @@ const ExplorerDocumentos = () => {
         {documentosFiltrados.length === 0 && (
           <p className="text-center text-gray-500 mt-6">Nenhum documento encontrado com os critérios aplicados.</p>
         )}
+
+        <div className="mt-12">
+          <Footer />
+        </div>
       </main>
-      <Footer />
       <BottomNav />
     </div>
   );
