@@ -1,0 +1,83 @@
+import React, { useEffect, useState } from 'react';
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { auth, db } from '@/firebase';
+import Header from '@/components/Header';
+
+const Dashboard = () => {
+  const [documentos, setDocumentos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
+      const data = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((doc) => doc.uid === user.uid);
+      setDocumentos(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
+      await deleteDoc(doc(db, 'documentos', id));
+    }
+  };
+
+  if (loading) return <p className="text-center mt-10">Carregando seus documentos...</p>;
+
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 py-8 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">✍️ Assinatura de Documentos</h1>
+
+          {documentos.length === 0 ? (
+            <p className="text-center text-gray-500">Você ainda não enviou nenhum documento.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {documentos.map((doc) => (
+                <div key={doc.id} className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
+                  <h3 className="text-md font-semibold text-indigo-700 truncate">{doc.name}</h3>
+                  <p className="text-xs text-gray-600 mt-1">Status: <span className={doc.status === 'Assinado' ? 'text-green-600' : 'text-yellow-600'}>{doc.status}</span></p>
+                  <p className="text-xs text-gray-400 break-words mt-1">Hash: {doc.hash}</p>
+                  <div className="mt-3 flex justify-between">
+                    <a
+                      href={`/validar/${doc.hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                    >
+                      Ver
+                    </a>
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+      <footer className="text-center text-gray-500 text-xs py-6">
+        MVP desenvolvido por <strong>Philipe Coutinho</strong> — <a href="https://p.coutinho.com.br" target="_blank" className="underline hover:text-black">p.coutinho.com.br</a>
+      </footer>
+    </>
+  );
+};
+
+export default Dashboard;
