@@ -1,38 +1,32 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
-import useWallet from '@/hooks/useWallet';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import QRCode from 'react-qr-code';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import useWallet from '@/hooks/useWallet';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { Share2 } from 'lucide-react';
 
 const ValidarDocumento = () => {
   const { hash } = useParams();
   const [documento, setDocumento] = useState(null);
   const [loading, setLoading] = useState(true);
-  const cardRef = useRef();
+  const cardRef = React.useRef();
   const { walletAddress } = useWallet();
 
   useEffect(() => {
-    const fetchDocumento = async () => {
-      try {
-        const ref = doc(db, 'documentos', hash);
-        const snapshot = await getDoc(ref);
-        if (snapshot.exists()) {
-          setDocumento(snapshot.data());
-        }
-      } catch (error) {
-        console.error('Erro ao buscar documento:', error);
-      } finally {
-        setLoading(false);
+    const fetchData = async () => {
+      const ref = doc(db, 'documentos', hash);
+      const snapshot = await getDoc(ref);
+      if (snapshot.exists()) {
+        setDocumento(snapshot.data());
       }
+      setLoading(false);
     };
-
-    fetchDocumento();
+    fetchData();
   }, [hash]);
 
   const handleDownloadPDF = async () => {
@@ -45,7 +39,8 @@ const ValidarDocumento = () => {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const link = window.location.href;
+    navigator.clipboard.writeText(link);
     alert('🔗 Link de verificação copiado para a área de transferência!');
   };
 
@@ -53,7 +48,7 @@ const ValidarDocumento = () => {
     if (!walletAddress || !auth.currentUser || !documento) return;
 
     const currentEmail = auth.currentUser.email;
-    const alreadySigned = documento.signatures?.some(sig => sig.wallet === walletAddress);
+    const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
     const isMultipla = documento.assinaturaMultipla === 'múltipla';
     const segundoEmail = documento.emailSegundo;
     const ehSegundo = isMultipla && documento.signatures.length === 1;
@@ -66,30 +61,31 @@ const ValidarDocumento = () => {
 
     if (alreadySigned || documento.signatures.length >= 2) return;
 
-    const novaAssinatura = {
+    const newSignature = {
       wallet: walletAddress,
       date: new Date().toLocaleString(),
       email: currentEmail,
     };
 
-    const assinaturasAtualizadas = [...documento.signatures, novaAssinatura];
-    const statusAtualizado =
-      documento.assinaturaMultipla === 'única' || assinaturasAtualizadas.length >= 2
+    const updatedSignatures = [...documento.signatures, newSignature];
+    const updatedStatus =
+      documento.assinaturaMultipla === 'única' || updatedSignatures.length >= 2
         ? 'Assinado'
         : 'Pendente';
 
-    const docAtualizado = {
+    const updatedDoc = {
       ...documento,
-      signatures: assinaturasAtualizadas,
-      status: statusAtualizado,
+      signatures: updatedSignatures,
+      status: updatedStatus,
     };
 
-    await setDoc(doc(db, 'documentos', hash), docAtualizado);
-    setDocumento(docAtualizado);
+    const ref = doc(db, 'documentos', hash);
+    await setDoc(ref, updatedDoc);
+    setDocumento(updatedDoc);
   };
 
-  if (loading) return <p className="text-center mt-10 text-gray-500">Carregando documento...</p>;
-  if (!documento) return <p className="text-center mt-10 text-red-500">❌ Documento não encontrado.</p>;
+  if (loading) return <p className="text-center mt-10">Carregando documento...</p>;
+  if (!documento) return <p className="text-center mt-10 text-red-500">Documento não encontrado.</p>;
 
   const currentEmail = auth.currentUser?.email || '';
   const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
@@ -102,42 +98,25 @@ const ValidarDocumento = () => {
     <>
       <Header />
       <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
-        <div
-          ref={cardRef}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300 dark:border-gray-700"
-        >
-          <h2 className="text-2xl font-semibold text-center mb-4 text-black dark:text-white">
-            📄 Verificação de Documento
-          </h2>
+        <div ref={cardRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300 dark:border-gray-700">
+          <h2 className="text-2xl font-semibold text-center mb-4 text-black dark:text-white">📄 Verificação de Documento</h2>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Nome: <strong>{documento.name}</strong></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Hash: <span className="break-words text-xs">{documento.hash}</span></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Status: <span className="text-green-600 font-medium">{documento.status}</span></p>
 
-          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">
-            Nome: <strong>{documento.name}</strong>
-          </p>
-          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">
-            Hash: <span className="break-words text-xs">{documento.hash}</span>
-          </p>
-          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">
-            Status:{' '}
-            <span className={documento.status === 'Assinado' ? 'text-green-600' : 'text-yellow-600 font-medium'}>
-              {documento.status}
-            </span>
-          </p>
-
-          {documento.signatures?.length > 0 && (
+          {documento.signatures && documento.signatures.length > 0 && (
             <div className="mt-4">
               <h3 className="text-sm font-semibold text-black dark:text-white">Assinaturas:</h3>
               <ul className="list-disc ml-4 text-sm text-gray-700 dark:text-gray-200 mt-1">
                 {documento.signatures.map((sig, index) => (
-                  <li key={index}>
-                    {sig.wallet} — {sig.email || 'sem e-mail'} — {sig.date}
-                  </li>
+                  <li key={index}>{sig.wallet} — {sig.email || 'Sem e-mail'} — {sig.date}</li>
                 ))}
               </ul>
             </div>
           )}
 
           <div className="flex flex-wrap gap-2 justify-between items-center mt-6">
-            <QRCode value={window.location.href} size={72} />
+            <QRCode value={window.location.href} size={72} bgColor="#ffffff" fgColor="#000000" />
             <button
               onClick={handleDownloadPDF}
               className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
@@ -148,7 +127,7 @@ const ValidarDocumento = () => {
               onClick={handleShare}
               className="text-sm flex items-center gap-2 text-indigo-600 hover:text-indigo-800"
             >
-              <Share2 size={16} /> Copiar link
+              <Share2 size={16} /> Copiar link de verificação
             </button>
           </div>
 
@@ -158,4 +137,28 @@ const ValidarDocumento = () => {
                 onClick={handleSign}
                 className="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition"
               >
-                ✍️ Ass
+                ✍️ Assinar Documento
+              </button>
+            </div>
+          )}
+
+          <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+            🔒 Este documento possui validade jurídica conforme <strong>Medida Provisória nº 2.200-2/2001</strong> — ICP-Brasil.
+            <br />MVP desenvolvido por <strong>Philipe Coutinho</strong> —{' '}
+            <a
+              href="https://p.coutinho.com.br"
+              className="text-[#ff385c] underline hover:text-red-500"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              p.coutinho.com.br
+            </a>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </>
+  );
+};
+
+export default ValidarDocumento;
