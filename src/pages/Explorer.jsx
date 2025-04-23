@@ -1,96 +1,97 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import { auth, db } from '@/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
-import DocumentUpload from '@/components/DocumentUpload';
-import { FileText, Trash2 } from 'lucide-react';
 
-const Dashboard = () => {
+const ExplorerDocumentos = () => {
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
 
   useEffect(() => {
-    const unsubscribeAuth = auth.onAuthStateChanged((firebaseUser) => {
-      setUser(firebaseUser);
-    });
-
-    return () => unsubscribeAuth();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
-      const data = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((doc) => doc.uid === user.uid);
-
+    const fetchDocumentos = async () => {
+      const snapshot = await getDocs(collection(db, 'documentos'));
+      const data = snapshot.docs.map(doc => doc.data());
       setDocumentos(data);
       setLoading(false);
-    });
+    };
+    fetchDocumentos();
+  }, []);
 
-    return () => unsubscribe();
-  }, [user]);
+  const documentosFiltrados = documentos.filter((doc) => {
+    const matchBusca = doc.name.toLowerCase().includes(busca.toLowerCase()) ||
+      doc.hash.toLowerCase().includes(busca.toLowerCase()) ||
+      doc.signatures?.some(sig => sig.email?.toLowerCase().includes(busca.toLowerCase()));
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
-      await deleteDoc(doc(db, 'documentos', id));
-    }
-  };
+    const matchStatus =
+      filtroStatus === 'todos' ||
+      (filtroStatus === 'pendente' && doc.status === 'Pendente') ||
+      (filtroStatus === 'assinado' && doc.status === 'Assinado');
 
-  if (loading) return <p className="text-center mt-10">Carregando seus documentos...</p>;
+    return matchBusca && matchStatus;
+  });
+
+  if (loading) return <p className="text-center mt-10">Carregando documentos...</p>;
 
   return (
     <>
       <Header />
-      <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6 text-center">✍️ Assinatura de Documentos</h1>
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8 text-center text-gray-900">📂 Explorer de Documentos</h1>
 
-        <DocumentUpload docs={documentos} setDocs={setDocumentos} />
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+            <input
+              type="text"
+              placeholder="Buscar por nome, hash ou e-mail"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="w-full sm:w-2/3 px-4 py-2 border border-gray-300 rounded-md"
+            />
 
-        {documentos.length === 0 ? (
-          <p className="text-center text-gray-500 mt-6">Você ainda não enviou nenhum documento.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-            {documentos.map((doc) => (
-              <div key={doc.id} className="bg-white shadow border rounded-xl p-4">
-                <h3 className="text-md font-semibold text-indigo-700 flex items-center gap-2">
-                  <FileText size={16} /> {doc.name}
-                </h3>
-                <p className="text-xs text-gray-500 mb-1">Status: {doc.status}</p>
-                <p className="text-xs break-words text-gray-400">Hash: {doc.hash}</p>
-                <div className="mt-2 flex justify-between items-center">
-                  <a
-                    href={`/validar/${doc.hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
-                  >
-                    Ver
-                  </a>
-                  <button
-                    onClick={() => handleDelete(doc.id)}
-                    className="text-sm flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                  >
-                    <Trash2 size={14} /> Excluir
-                  </button>
-                </div>
+            <select
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="todos">Todos</option>
+              <option value="pendente">Pendentes</option>
+              <option value="assinado">Assinados</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {documentosFiltrados.map((doc, index) => (
+              <div key={index} className="bg-white p-4 rounded-xl shadow border border-gray-200">
+                <h3 className="font-semibold text-indigo-700 text-sm truncate">{doc.name}</h3>
+                <p className="text-xs text-gray-500 mt-1">Hash:</p>
+                <p className="text-xs text-gray-700 break-words mb-2">{doc.hash}</p>
+                <p className="text-sm font-medium text-gray-800 mb-1">
+                  Status: <span className={doc.status === 'Assinado' ? 'text-green-600' : 'text-yellow-600'}>{doc.status}</span>
+                </p>
+                <p className="text-xs text-gray-500">Assinaturas: {doc.signatures?.length || 0} de 2</p>
+                <Link
+                  to={`/validar/${doc.hash}`}
+                  className="inline-block mt-3 text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800 transition"
+                >
+                  Ver Documento
+                </Link>
               </div>
             ))}
           </div>
-        )}
 
-        <div className="mt-10 text-center text-sm text-gray-500 max-w-2xl mx-auto">
-          <p>
-            🔒 As assinaturas realizadas nesta plataforma possuem validade jurídica conforme
-            <strong> Medida Provisória nº 2.200-2/2001</strong>, que institui a <strong>Infraestrutura de Chaves Públicas Brasileira (ICP-Brasil)</strong>,
-            garantindo autenticidade, integridade e validade jurídica aos documentos assinados digitalmente.
-          </p>
+          {documentosFiltrados.length === 0 && (
+            <p className="text-center text-gray-500 mt-6">Nenhum documento encontrado com os critérios aplicados.</p>
+          )}
         </div>
-      </div>
+      </main>
+      <footer className="text-center text-gray-500 text-xs py-6">
+        MVP desenvolvido por <strong>Philipe Coutinho</strong> — <a href="https://p.coutinho.com.br" target="_blank" className="underline hover:text-black">p.coutinho.com.br</a>
+      </footer>
     </>
   );
 };
 
-export default Dashboard;
+export default ExplorerDocumentos;
