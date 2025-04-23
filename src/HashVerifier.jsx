@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import useWallet from '@/hooks/useWallet';
 import Header from '@/components/Header';
+import { Share2 } from 'lucide-react';
 
 const ValidarDocumento = () => {
   const { hash } = useParams();
@@ -34,6 +35,12 @@ const ValidarDocumento = () => {
     const pdf = new jsPDF();
     pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
     pdf.save(`documento-assinado-${new Date().toISOString().slice(0, 10)}-${hash}.pdf`);
+  };
+
+  const handleShare = () => {
+    const link = window.location.href;
+    navigator.clipboard.writeText(link);
+    alert('🔗 Link de verificação copiado para a área de transferência!');
   };
 
   const handleSign = async () => {
@@ -104,13 +111,19 @@ const ValidarDocumento = () => {
             </div>
           )}
 
-          <div className="flex justify-between items-center mt-6">
+          <div className="flex flex-wrap gap-2 justify-between items-center mt-6">
             <QRCode value={window.location.href} size={72} bgColor="#ffffff" fgColor="#000000" />
             <button
               onClick={handleDownloadPDF}
               className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
             >
               Baixar PDF assinado
+            </button>
+            <button
+              onClick={handleShare}
+              className="text-sm flex items-center gap-2 text-indigo-600 hover:text-indigo-800"
+            >
+              <Share2 size={16} /> Copiar link de verificação
             </button>
           </div>
 
