@@ -1,3 +1,4 @@
+// Explorer.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -39,11 +40,11 @@ const ExplorerDocumentos = () => {
   if (loading) return <p className="text-center mt-10">Carregando documentos...</p>;
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
-      <div className="max-w-6xl mx-auto p-4 min-h-screen">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-rose-600 flex justify-center items-center gap-2">
-          <span role="img">📁</span> Explorer de Documentos Assinados
+      <main className="flex-grow px-4 pt-4 max-w-6xl mx-auto w-full">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-[#ff385c] flex justify-center items-center gap-2">
+          📁 Explorer de Documentos Assinados
         </h1>
 
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
@@ -52,7 +53,7 @@ const ExplorerDocumentos = () => {
             placeholder="Buscar por nome, hash ou e-mail"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full sm:w-2/3 px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+            className="w-full sm:w-2/3 max-w-md px-4 py-2 border border-gray-300 rounded-md shadow-sm"
           />
           <select
             value={filtroStatus}
@@ -77,7 +78,7 @@ const ExplorerDocumentos = () => {
               <p className="text-xs text-gray-500">Assinaturas: {doc.signatures?.length || 0} de 2</p>
               <Link
                 to={`/validar/${doc.hash}`}
-                className="inline-block mt-3 text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800 transition"
+                className="inline-block mt-3 text-sm bg-[#ff385c] text-white px-3 py-1 rounded hover:bg-red-500 transition"
               >
                 Ver Documento
               </Link>
@@ -88,11 +89,10 @@ const ExplorerDocumentos = () => {
         {documentosFiltrados.length === 0 && (
           <p className="text-center text-gray-500 mt-6">Nenhum documento encontrado com os critérios aplicados.</p>
         )}
-      </div>
-
+      </main>
       <Footer />
       <BottomNav />
-    </>
+    </div>
   );
 };
 
