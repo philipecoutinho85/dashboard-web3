@@ -8,24 +8,31 @@ import html2canvas from 'html2canvas';
 import useWallet from '@/hooks/useWallet';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import BottomNav from '@/components/BottomNav';
 import { Share2 } from 'lucide-react';
 
 const ValidarDocumento = () => {
   const { hash } = useParams();
   const [documento, setDocumento] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const cardRef = React.useRef();
   const { walletAddress } = useWallet();
 
   useEffect(() => {
     const fetchData = async () => {
-      const ref = doc(db, 'documentos', hash);
-      const snapshot = await getDoc(ref);
-      if (snapshot.exists()) {
-        setDocumento(snapshot.data());
+      try {
+        const ref = doc(db, 'documentos', hash);
+        const snapshot = await getDoc(ref);
+        if (snapshot.exists()) {
+          setDocumento(snapshot.data());
+        } else {
+          setError('Documento não encontrado.');
+        }
+      } catch (err) {
+        setError('Erro ao carregar o documento.');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchData();
   }, [hash]);
@@ -69,14 +76,15 @@ const ValidarDocumento = () => {
     };
 
     const updatedSignatures = [...documento.signatures, newSignature];
-    const updatedStatus = (documento.assinaturaMultipla === 'única' || updatedSignatures.length >= 2)
-      ? 'Assinado'
-      : 'Pendente';
+    const updatedStatus =
+      documento.assinaturaMultipla === 'única' || updatedSignatures.length >= 2
+        ? 'Assinado'
+        : 'Pendente';
 
     const updatedDoc = {
       ...documento,
       signatures: updatedSignatures,
-      status: updatedStatus
+      status: updatedStatus,
     };
 
     const ref = doc(db, 'documentos', hash);
@@ -85,7 +93,8 @@ const ValidarDocumento = () => {
   };
 
   if (loading) return <p className="text-center mt-10">Carregando documento...</p>;
-  if (!documento) return <p className="text-center mt-10 text-red-500">Documento não encontrado.</p>;
+  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
+  if (!documento) return null;
 
   const currentEmail = auth.currentUser?.email || '';
   const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
@@ -95,20 +104,19 @@ const ValidarDocumento = () => {
   const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
+    <>
       <Header />
-
-      <main className="flex-grow px-4 pt-4 pb-20 max-w-2xl mx-auto w-full">
-        <div ref={cardRef} className="bg-white rounded-xl shadow-lg p-6 border border-gray-300 dark:bg-gray-800 dark:border-gray-700">
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+        <div ref={cardRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300 dark:border-gray-700">
           <h2 className="text-2xl font-semibold text-center mb-4 text-black dark:text-white">📄 Verificação de Documento</h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Nome: <strong>{documento.name}</strong></p>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Hash: <span className="break-words text-xs">{documento.hash}</span></p>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Status: <span className="text-green-600 font-medium">{documento.status}</span></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Nome: <strong>{documento.name}</strong></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Hash: <span className="break-words text-xs">{documento.hash}</span></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Status: <span className="text-green-600 font-medium">{documento.status}</span></p>
 
           {documento.signatures && documento.signatures.length > 0 && (
             <div className="mt-4">
               <h3 className="text-sm font-semibold text-black dark:text-white">Assinaturas:</h3>
-              <ul className="list-disc ml-4 text-sm text-gray-700 dark:text-gray-300 mt-1">
+              <ul className="list-disc ml-4 text-sm text-gray-700 dark:text-gray-200 mt-1">
                 {documento.signatures.map((sig, index) => (
                   <li key={index}>{sig.wallet} — {sig.email || 'Sem e-mail'} — {sig.date}</li>
                 ))}
@@ -142,12 +150,23 @@ const ValidarDocumento = () => {
               </button>
             </div>
           )}
-        </div>
-      </main>
 
+          <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+            🔒 Este documento possui validade jurídica conforme <strong>Medida Provisória nº 2.200-2/2001</strong> — ICP-Brasil.
+            <br />MVP desenvolvido por <strong>Philipe Coutinho</strong> —{' '}
+            <a
+              href="https://p.coutinho.com.br"
+              className="text-[#ff385c] underline hover:text-red-500"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              p.coutinho.com.br
+            </a>
+          </div>
+        </div>
+      </div>
       <Footer />
-      <BottomNav />
-    </div>
+    </>
   );
 };
 
