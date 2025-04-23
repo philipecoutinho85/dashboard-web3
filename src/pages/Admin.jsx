@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import Header from '@/components/Header';
+import BottomNav from '@/components/BottomNav';
 import { FileText, CheckCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -53,46 +54,45 @@ const Admin = () => {
   const assinados = documentos.filter(doc => doc.status === 'Assinado').length;
   const pendentes = documentos.filter(doc => doc.status === 'Pendente').length;
 
-  if (loading) return <p className="text-center mt-10">Carregando documentos...</p>;
-
   return (
-    <>
+    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header />
-      <div className="max-w-6xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6 text-center">🔐 Painel Administrativo</h1>
+
+      <main className="flex-grow px-4 pb-28 pt-4 max-w-6xl mx-auto w-full">
+        <h1 className="text-2xl font-bold mb-6 text-center text-[#ff385c]">🔐 Painel Administrativo</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.1 }}
-            className="bg-gray-100 border rounded-xl p-4 text-center shadow"
+            className="bg-gray-100 dark:bg-gray-800 border rounded-xl p-4 text-center shadow"
           >
-            <FileText className="mx-auto text-gray-600 mb-1" size={28} />
-            <p className="text-sm text-gray-600">Total de Documentos</p>
-            <p className="text-2xl font-bold text-black">{total}</p>
+            <FileText className="mx-auto text-gray-600 dark:text-gray-300 mb-1" size={28} />
+            <p className="text-sm text-gray-600 dark:text-gray-300">Total de Documentos</p>
+            <p className="text-2xl font-bold text-black dark:text-white">{total}</p>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.2 }}
-            className="bg-green-100 border rounded-xl p-4 text-center shadow"
+            className="bg-green-100 dark:bg-green-800 border rounded-xl p-4 text-center shadow"
           >
             <CheckCircle className="mx-auto text-green-700 mb-1" size={28} />
-            <p className="text-sm text-gray-600">Assinados</p>
-            <p className="text-2xl font-bold text-green-700">{assinados}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Assinados</p>
+            <p className="text-2xl font-bold text-green-700 dark:text-white">{assinados}</p>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.3 }}
-            className="bg-yellow-100 border rounded-xl p-4 text-center shadow"
+            className="bg-yellow-100 dark:bg-yellow-700 border rounded-xl p-4 text-center shadow"
           >
             <Clock className="mx-auto text-yellow-700 mb-1" size={28} />
-            <p className="text-sm text-gray-600">Pendentes</p>
-            <p className="text-2xl font-bold text-yellow-700">{pendentes}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Pendentes</p>
+            <p className="text-2xl font-bold text-yellow-700 dark:text-white">{pendentes}</p>
           </motion.div>
         </div>
 
@@ -106,7 +106,7 @@ const Admin = () => {
         </div>
 
         {documentos.length === 0 ? (
-          <p className="text-center text-gray-500">Nenhum documento encontrado.</p>
+          <p className="text-center text-gray-500 dark:text-gray-300">Nenhum documento encontrado.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {documentos.map((doc) => (
@@ -115,19 +115,19 @@ const Admin = () => {
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ delay: 0.05 }}
-                className="bg-white shadow border rounded-xl p-4"
+                className="bg-white dark:bg-gray-800 shadow border rounded-xl p-4"
               >
-                <h3 className="text-md font-semibold text-indigo-700">{doc.name}</h3>
-                <p className="text-xs text-gray-500 mb-1">Status: {doc.status}</p>
-                <p className="text-xs break-words text-gray-400 mb-2">Hash: {doc.hash}</p>
-                <p className="text-xs text-gray-600">Assinaturas: {doc.signatures?.length || 0} de 2</p>
+                <h3 className="text-md font-semibold text-indigo-700 dark:text-white">{doc.name}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-300 mb-1">Status: {doc.status}</p>
+                <p className="text-xs break-words text-gray-400 dark:text-gray-400 mb-2">Hash: {doc.hash}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">Assinaturas: {doc.signatures?.length || 0} de 2</p>
                 <p className="text-xs text-gray-400 mb-1">Criado por: {doc.uid || 'desconhecido'}</p>
                 <div className="mt-2 flex justify-between">
                   <a
                     href={`/validar/${doc.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                    className="text-sm bg-[#ff385c] text-white px-3 py-1 rounded hover:bg-red-500"
                   >
                     Ver
                   </a>
@@ -142,8 +142,10 @@ const Admin = () => {
             ))}
           </div>
         )}
-      </div>
-    </>
+      </main>
+
+      <BottomNav />
+    </div>
   );
 };
 
