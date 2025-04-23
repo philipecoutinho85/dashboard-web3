@@ -15,11 +15,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file || !auth.currentUser) return;
+    if (!file) return;
 
-    const uid = auth.currentUser.uid;
     const mockHash = `hash_${Math.random().toString(36).substring(7)}`;
-
     const newDoc = {
       name: file.name,
       hash: mockHash,
@@ -29,12 +27,16 @@ const DocumentUpload = ({ docs, setDocs }) => {
       createdAt: new Date().toISOString(),
       assinaturaMultipla,
       emailSegundo: assinaturaMultipla === 'múltipla' ? emailSegundo : null,
-      uid // ✅ Salva o UID para aparecer no Dashboard
+      uid: auth.currentUser?.uid || null
     };
 
     const updatedDocs = [...docs, newDoc];
     setDocs(updatedDocs);
-    localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
+
+    const uid = auth.currentUser?.uid;
+    if (uid) {
+      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
+    }
 
     await setDoc(doc(db, 'documentos', newDoc.hash), newDoc);
     setFile(null);
@@ -94,8 +96,9 @@ const DocumentUpload = ({ docs, setDocs }) => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleUpload} className="mb-4 flex flex-col gap-4">
+    <div className="bg-white rounded-xl shadow border border-gray-200 p-4 mb-8">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">📤 Enviar Novo Documento</h2>
+      <form onSubmit={handleUpload} className="mb-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de assinatura</label>
           <select
@@ -135,10 +138,10 @@ const DocumentUpload = ({ docs, setDocs }) => {
         const alreadySigned = doc.signatures.some(sig => sig.wallet === walletAddress);
 
         return (
-          <div key={index} className="bg-white shadow-md border border-gray-200 rounded-xl p-4 mb-4">
-            <h3 className="text-md font-bold text-indigo-700">{doc.name}</h3>
-            <p className="text-sm text-gray-600">Status: <span className="text-yellow-700">{doc.status}</span></p>
-            <p className="text-xs text-gray-400">Hash: {doc.hash}</p>
+          <div key={index} className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+            <h3 className="text-md font-bold text-indigo-700 truncate">{doc.name}</h3>
+            <p className="text-sm text-gray-600">Status: <span className="font-medium">{doc.status}</span></p>
+            <p className="text-xs text-gray-400 break-words">Hash: {doc.hash}</p>
             <p className="text-xs mt-1">Assinaturas: {doc.signatures.length} de 2</p>
 
             {doc.assinaturaMultipla === 'múltipla' && doc.emailSegundo && (
@@ -164,11 +167,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
             )}
 
             <button
-              disabled={
-                !walletAddress ||
-                alreadySigned ||
-                doc.signatures.length >= 2
-              }
+              disabled={!walletAddress || alreadySigned || doc.signatures.length >= 2}
               onClick={() => handleSign(index)}
               className={`mt-4 px-3 py-1 rounded text-sm ${
                 !walletAddress || alreadySigned || doc.signatures.length >= 2
