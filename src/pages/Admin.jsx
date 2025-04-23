@@ -1,9 +1,9 @@
-// Admin.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import Footer from '@/components/Footer';
 import { FileText, CheckCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -145,6 +145,10 @@ const Admin = () => {
             ))}
           </div>
         )}
+
+        <div className="mt-12">
+          <Footer />
+        </div>
       </main>
 
       <BottomNav />
