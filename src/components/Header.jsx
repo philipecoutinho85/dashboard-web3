@@ -1,51 +1,49 @@
-// src/components/Header.jsx
 import React from 'react';
-import { auth } from '@/firebase';
-import { signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import useWallet from '@/hooks/useWallet';
+import { Moon, Sun } from 'lucide-react';
 
-export default function Header({ walletAddress, connectWallet }) {
-  const userEmail = auth.currentUser?.email || '';
-  const navigate = useNavigate();
+const Header = () => {
+  const location = useLocation();
+  const { walletAddress, connectWallet } = useWallet();
+  const [darkMode, setDarkMode] = React.useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/login');
-    } catch (err) {
-      console.error('Erro ao sair:', err);
-    }
-  };
+  React.useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   return (
-    <div className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b mb-6 rounded-xl">
-      <div>
-        <h1 className="text-xl font-bold text-rose-600">HashSign</h1>
-        <p className="text-sm text-gray-500">Bem-vindo, {userEmail}</p>
-        {walletAddress && (
-          <p className="text-xs text-green-600 mt-1">
-            Carteira: <span className="font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
-          </p>
-        )}
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 py-3 flex items-center justify-between sm:justify-center sm:gap-6">
+      <Link to="/dashboard" className="text-xl font-bold text-black dark:text-white">
+        Hashsign
+      </Link>
+
+      <div className="hidden sm:flex items-center gap-6">
+        <Link to="/dashboard" className={`text-sm font-medium ${location.pathname === '/dashboard' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'}`}>Dashboard</Link>
+        <Link to="/explorer" className={`text-sm font-medium ${location.pathname === '/explorer' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'}`}>Explorer</Link>
+        <Link to="/admin" className={`text-sm font-medium ${location.pathname === '/admin' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'}`}>Admin</Link>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <a href="/dashboard" className="text-sm hover:underline">🏠 Dashboard</a>
-        <a href="/explorer" className="text-sm hover:underline">📂 Explorer</a>
-        <a href="/admin" className="text-sm hover:underline">🛠️ Admin</a>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="text-gray-500 dark:text-gray-300 hover:text-black dark:hover:text-white"
+        >
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
         <button
           onClick={connectWallet}
-          className="bg-rose-500 text-white text-sm px-3 py-1 rounded hover:bg-rose-600"
+          className="bg-black text-white text-xs px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
         >
-          {walletAddress ? 'Carteira Conectada' : 'Conectar Carteira'}
-        </button>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-rose-500 hover:underline"
-        >
-          Sair
+          {walletAddress ? 'Carteira conectada' : 'Conectar Carteira'}
         </button>
       </div>
-    </div>
+    </header>
   );
-}
+};
+
+export default Header;
