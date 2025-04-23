@@ -23,7 +23,7 @@ const Dashboard = () => {
     const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
       const data = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((doc) => doc.uid === user.uid); // filtra pelo UID
+        .filter((doc) => doc.uid === user.uid);
 
       setDocumentos(data);
       setLoading(false);
@@ -44,12 +44,12 @@ const Dashboard = () => {
     <>
       <Header />
       <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6 text-center">📁 Meus Documentos</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">✍️ Assinatura de Documentos</h1>
 
         <DocumentUpload docs={documentos} setDocs={setDocumentos} />
 
         {documentos.length === 0 ? (
-          <p className="text-center text-gray-500">Você ainda não enviou nenhum documento.</p>
+          <p className="text-center text-gray-500 mt-6">Você ainda não enviou nenhum documento.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
             {documentos.map((doc) => (
@@ -77,6 +77,14 @@ const Dashboard = () => {
             ))}
           </div>
         )}
+
+        <div className="mt-10 text-center text-sm text-gray-500 max-w-2xl mx-auto">
+          <p>
+            🔒 As assinaturas realizadas nesta plataforma possuem validade jurídica conforme
+            <strong> Medida Provisória nº 2.200-2/2001</strong>, que institui a <strong>Infraestrutura de Chaves Públicas Brasileira (ICP-Brasil)</strong>,
+            garantindo autenticidade, integridade e validade jurídica aos documentos assinados digitalmente.
+          </p>
+        </div>
       </div>
     </>
   );
