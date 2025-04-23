@@ -5,7 +5,7 @@ const useWallet = () => {
   const [walletAddress, setWalletAddress] = useState('');
 
   const connectWallet = async () => {
-    if (typeof window.ethereum === 'undefined') {
+    if (!window.ethereum) {
       alert('⚠️ MetaMask não está instalada!');
       return;
     }
@@ -13,14 +13,14 @@ const useWallet = () => {
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setWalletAddress(accounts[0]);
-    } catch (err) {
-      console.error('Erro ao conectar carteira:', err);
-      alert('❌ Falha ao conectar carteira.');
+    } catch (error) {
+      console.error('Erro ao conectar carteira:', error);
+      alert('❌ Falha ao conectar carteira. Verifique se a MetaMask está desbloqueada.');
     }
   };
 
   useEffect(() => {
-    const checkWalletConnection = async () => {
+    const checkIfWalletIsConnected = async () => {
       if (window.ethereum) {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
@@ -29,9 +29,8 @@ const useWallet = () => {
       }
     };
 
-    checkWalletConnection();
+    checkIfWalletIsConnected();
 
-    // Atualiza automaticamente se usuário mudar de conta
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
         setWalletAddress(accounts[0] || '');
