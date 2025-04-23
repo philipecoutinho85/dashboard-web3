@@ -19,6 +19,7 @@
     "react-qr-code": "^2.0.7",
     "react-router-dom": "^6.22.3",
     "web3": "^1.10.0"
+    "lucide-react": "^0.328.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.1.0",
