@@ -1,10 +1,10 @@
-// Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import DocumentUpload from '@/components/DocumentUpload';
+import Footer from '@/components/Footer';
 
 const Dashboard = () => {
   const [documentos, setDocumentos] = useState([]);
@@ -54,7 +54,9 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {documentos.map((doc) => (
               <div key={doc.id} className="bg-white dark:bg-gray-800 shadow border rounded-xl p-4">
-                <h3 className="text-md font-semibold text-indigo-700 truncate dark:text-white">{doc.name}</h3>
+                <h3 className="text-md font-semibold text-indigo-700 truncate dark:text-white">
+                  {doc.name}
+                </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-300 mb-1">Status: {doc.status}</p>
                 <p className="text-xs break-words text-gray-400 dark:text-gray-400">Hash: {doc.hash}</p>
                 <div className="mt-2 flex justify-between">
@@ -62,4 +64,27 @@ const Dashboard = () => {
                     href={`/validar/${doc.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm bg-[#ff385c] text-white px-3 py-
+                    className="text-sm bg-[#ff385c] text-white px-3 py-1 rounded hover:bg-red-500"
+                  >
+                    Ver
+                  </a>
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+      <BottomNav />
+    </div>
+  );
+};
+
+export default Dashboard;
