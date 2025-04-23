@@ -1,159 +1,164 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
-import { auth, db } from '@/firebase';
+import { useParams } from 'react-router-dom';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db, auth } from '@/firebase';
+import QRCode from 'react-qr-code';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import useWallet from '@/hooks/useWallet';
 import Header from '@/components/Header';
-import BottomNav from '@/components/BottomNav';
 import Footer from '@/components/Footer';
-import { FileText, CheckCircle, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Share2 } from 'lucide-react';
 
-const Admin = () => {
-  const [documentos, setDocumentos] = useState([]);
+const ValidarDocumento = () => {
+  const { hash } = useParams();
+  const [documento, setDocumento] = useState(null);
   const [loading, setLoading] = useState(true);
+  const cardRef = React.useRef();
+  const { walletAddress } = useWallet();
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'documentos'), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setDocumentos(data);
+    const fetchData = async () => {
+      const ref = doc(db, 'documentos', hash);
+      const snapshot = await getDoc(ref);
+      if (snapshot.exists()) {
+        setDocumento(snapshot.data());
+      }
       setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+    };
+    fetchData();
+  }, [hash]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
-      await deleteDoc(doc(db, 'documentos', id));
-    }
+  const handleDownloadPDF = async () => {
+    if (!cardRef.current) return;
+    const canvas = await html2canvas(cardRef.current);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF();
+    pdf.addImage(imgData, 'PNG', 10, 10, 190, 0);
+    pdf.save(`documento-assinado-${new Date().toISOString().slice(0, 10)}-${hash}.pdf`);
   };
 
-  const corrigirDocumentosSemUid = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert('Usuário não autenticado.');
+  const handleShare = () => {
+    const link = window.location.href;
+    navigator.clipboard.writeText(link);
+    alert('🔗 Link de verificação copiado para a área de transferência!');
+  };
+
+  const handleSign = async () => {
+    if (!walletAddress || !auth.currentUser || !documento) return;
+
+    const currentEmail = auth.currentUser.email;
+    const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
+    const isMultipla = documento.assinaturaMultipla === 'múltipla';
+    const segundoEmail = documento.emailSegundo;
+    const ehSegundo = isMultipla && documento.signatures.length === 1;
+    const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
+
+    if (!autorizadoComoSegundo) {
+      alert('Você não está autorizado a assinar como segunda parte neste documento.');
       return;
     }
 
-    const uid = user.uid;
-    const snapshot = await getDocs(collection(db, 'documentos'));
-    const documentos = snapshot.docs;
+    if (alreadySigned || documento.signatures.length >= 2) return;
 
-    let atualizados = 0;
+    const newSignature = {
+      wallet: walletAddress,
+      date: new Date().toLocaleString(),
+      email: currentEmail,
+    };
 
-    for (const d of documentos) {
-      const data = d.data();
-      if (!data.uid) {
-        const ref = doc(db, 'documentos', d.id);
-        await updateDoc(ref, { uid });
-        atualizados++;
-      }
-    }
+    const updatedSignatures = [...documento.signatures, newSignature];
+    const updatedStatus =
+      documento.assinaturaMultipla === 'única' || updatedSignatures.length >= 2
+        ? 'Assinado'
+        : 'Pendente';
 
-    alert(`✅ ${atualizados} documentos atualizados com sucesso com seu UID.`);
+    const updatedDoc = {
+      ...documento,
+      signatures: updatedSignatures,
+      status: updatedStatus,
+    };
+
+    const ref = doc(db, 'documentos', hash);
+    await setDoc(ref, updatedDoc);
+    setDocumento(updatedDoc);
   };
 
-  const total = documentos.length;
-  const assinados = documentos.filter(doc => doc.status === 'Assinado').length;
-  const pendentes = documentos.filter(doc => doc.status === 'Pendente').length;
+  if (loading) return <p className="text-center mt-10">Carregando documento...</p>;
+  if (!documento) return <p className="text-center mt-10 text-red-500">Documento não encontrado.</p>;
+
+  const currentEmail = auth.currentUser?.email || '';
+  const alreadySigned = documento.signatures.some(sig => sig.wallet === walletAddress);
+  const isMultipla = documento.assinaturaMultipla === 'múltipla';
+  const segundoEmail = documento.emailSegundo;
+  const ehSegundo = isMultipla && documento.signatures.length === 1;
+  const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
+    <>
       <Header />
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+        <div ref={cardRef} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-xl border border-gray-300 dark:border-gray-700">
+          <h2 className="text-2xl font-semibold text-center mb-4 text-black dark:text-white">📄 Verificação de Documento</h2>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Nome: <strong>{documento.name}</strong></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Hash: <span className="break-words text-xs">{documento.hash}</span></p>
+          <p className="text-sm text-gray-700 dark:text-gray-200 mb-2">Status: <span className="text-green-600 font-medium">{documento.status}</span></p>
 
-      <main className="flex-grow px-4 pb-28 pt-4 max-w-6xl mx-auto w-full">
-        <h1 className="text-2xl font-bold mb-6 text-center text-[#ff385c]">🔐 Painel Administrativo</h1>
+          {documento.signatures && documento.signatures.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold text-black dark:text-white">Assinaturas:</h3>
+              <ul className="list-disc ml-4 text-sm text-gray-700 dark:text-gray-200 mt-1">
+                {documento.signatures.map((sig, index) => (
+                  <li key={index}>{sig.wallet} — {sig.email || 'Sem e-mail'} — {sig.date}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.1 }}
-            className="bg-gray-100 dark:bg-gray-800 border rounded-xl p-4 text-center shadow"
-          >
-            <FileText className="mx-auto text-gray-600 dark:text-gray-300 mb-1" size={28} />
-            <p className="text-sm text-gray-600 dark:text-gray-300">Total de Documentos</p>
-            <p className="text-2xl font-bold text-black dark:text-white">{total}</p>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.2 }}
-            className="bg-green-100 dark:bg-green-800 border rounded-xl p-4 text-center shadow"
-          >
-            <CheckCircle className="mx-auto text-green-700 mb-1" size={28} />
-            <p className="text-sm text-gray-600 dark:text-gray-300">Assinados</p>
-            <p className="text-2xl font-bold text-green-700 dark:text-white">{assinados}</p>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.3 }}
-            className="bg-yellow-100 dark:bg-yellow-700 border rounded-xl p-4 text-center shadow"
-          >
-            <Clock className="mx-auto text-yellow-700 mb-1" size={28} />
-            <p className="text-sm text-gray-600 dark:text-gray-300">Pendentes</p>
-            <p className="text-2xl font-bold text-yellow-700 dark:text-white">{pendentes}</p>
-          </motion.div>
-        </div>
-
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={corrigirDocumentosSemUid}
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          >
-            Corrigir documentos sem UID
-          </button>
-        </div>
-
-        {loading ? (
-          <p className="text-center text-gray-500 dark:text-gray-300">Carregando documentos...</p>
-        ) : documentos.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-300">Nenhum documento encontrado.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documentos.map((doc) => (
-              <motion.div 
-                key={doc.id} 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: 0.05 }}
-                className="bg-white dark:bg-gray-800 shadow border rounded-xl p-4"
-              >
-                <h3 className="text-md font-semibold text-indigo-700 dark:text-white">{doc.name}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-300 mb-1">Status: {doc.status}</p>
-                <p className="text-xs break-words text-gray-400 dark:text-gray-400 mb-2">Hash: {doc.hash}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-300">Assinaturas: {doc.signatures?.length || 0} de 2</p>
-                <p className="text-xs text-gray-400 mb-1">Criado por: {doc.uid || 'desconhecido'}</p>
-                <div className="mt-2 flex justify-between">
-                  <a
-                    href={`/validar/${doc.hash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm bg-[#ff385c] text-white px-3 py-1 rounded hover:bg-red-500"
-                  >
-                    Ver
-                  </a>
-                  <button
-                    onClick={() => handleDelete(doc.id)}
-                    className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+          <div className="flex flex-wrap gap-2 justify-between items-center mt-6">
+            <QRCode value={window.location.href} size={72} bgColor="#ffffff" fgColor="#000000" />
+            <button
+              onClick={handleDownloadPDF}
+              className="bg-black text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition"
+            >
+              Baixar PDF assinado
+            </button>
+            <button
+              onClick={handleShare}
+              className="text-sm flex items-center gap-2 text-indigo-600 hover:text-indigo-800"
+            >
+              <Share2 size={16} /> Copiar link de verificação
+            </button>
           </div>
-        )}
 
-        <div className="mt-12">
-          <Footer />
+          {!alreadySigned && documento.signatures.length < 2 && autorizadoComoSegundo && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleSign}
+                className="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition"
+              >
+                ✍️ Assinar como segundo signatário
+              </button>
+            </div>
+          )}
+
+          <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+            🔒 Este documento possui validade jurídica conforme <strong>Medida Provisória nº 2.200-2/2001</strong> — ICP-Brasil.
+            <br />MVP desenvolvido por <strong>Philipe Coutinho</strong> —{' '}
+            <a
+              href="https://p.coutinho.com.br"
+              className="text-[#ff385c] underline hover:text-red-500"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              p.coutinho.com.br
+            </a>
+          </div>
         </div>
-      </main>
-
-      <BottomNav />
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 
-export default Admin;
+export default ValidarDocumento;
