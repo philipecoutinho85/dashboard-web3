@@ -32,13 +32,12 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
     const updatedDocs = [...docs, newDoc];
     setDocs(updatedDocs);
+    await setDoc(doc(db, 'documentos', mockHash), newDoc);
 
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
+    if (auth.currentUser?.uid) {
+      localStorage.setItem(`hashsign_docs_${auth.currentUser.uid}`, JSON.stringify(updatedDocs));
     }
 
-    await setDoc(doc(db, 'documentos', newDoc.hash), newDoc);
     setFile(null);
     setEmailSegundo('');
   };
@@ -54,19 +53,18 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
     const existingDoc = snapshot.data();
     const alreadySigned = existingDoc.signatures.some(sig => sig.wallet === walletAddress);
-
     const isMultipla = existingDoc.assinaturaMultipla === 'múltipla';
     const segundoEmail = existingDoc.emailSegundo;
-
     const ehSegundo = isMultipla && existingDoc.signatures.length === 1;
     const autorizadoComoSegundo = !ehSegundo || (ehSegundo && currentEmail === segundoEmail);
+    const limiteAssinaturas = isMultipla ? 2 : 1;
 
     if (!autorizadoComoSegundo) {
       alert('Você não está autorizado a assinar como segunda parte neste documento.');
       return;
     }
 
-    if (alreadySigned || existingDoc.signatures.length >= 2) return;
+    if (alreadySigned || existingDoc.signatures.length >= limiteAssinaturas) return;
 
     const newSignature = {
       wallet: walletAddress,
@@ -75,7 +73,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
     };
 
     const updatedSignatures = [...existingDoc.signatures, newSignature];
-    const updatedStatus = updatedSignatures.length >= 2 ? 'Assinado' : 'Pendente';
+    const updatedStatus = updatedSignatures.length >= limiteAssinaturas ? 'Assinado' : 'Pendente';
 
     const updatedDoc = {
       ...existingDoc,
@@ -84,14 +82,12 @@ const DocumentUpload = ({ docs, setDocs }) => {
     };
 
     await setDoc(ref, updatedDoc);
-
     const updatedDocs = [...docs];
     updatedDocs[index] = updatedDoc;
     setDocs(updatedDocs);
 
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      localStorage.setItem(`hashsign_docs_${uid}`, JSON.stringify(updatedDocs));
+    if (auth.currentUser?.uid) {
+      localStorage.setItem(`hashsign_docs_${auth.currentUser.uid}`, JSON.stringify(updatedDocs));
     }
   };
 
@@ -104,7 +100,7 @@ const DocumentUpload = ({ docs, setDocs }) => {
           <select
             value={assinaturaMultipla}
             onChange={(e) => setAssinaturaMultipla(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md"
           >
             <option value="única">Apenas uma pessoa irá assinar</option>
             <option value="múltipla">Haverá outra pessoa para assinar</option>
@@ -136,20 +132,20 @@ const DocumentUpload = ({ docs, setDocs }) => {
 
       {docs.map((doc, index) => {
         const alreadySigned = doc.signatures.some(sig => sig.wallet === walletAddress);
+        const totalAssinaturas = doc.assinaturaMultipla === 'múltipla' ? 2 : 1;
 
         return (
           <div key={index} className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
             <h3 className="text-md font-bold text-indigo-700 truncate">{doc.name}</h3>
             <p className="text-sm text-gray-600">Status: <span className="font-medium">{doc.status}</span></p>
             <p className="text-xs text-gray-400 break-words">Hash: {doc.hash}</p>
-            <p className="text-xs mt-1">Assinaturas: {doc.signatures.length} de 2</p>
+            <p className="text-xs mt-1">Assinaturas: {doc.signatures.length} de {totalAssinaturas}</p>
 
             {doc.assinaturaMultipla === 'múltipla' && doc.emailSegundo && (
               <>
                 <p className="text-xs text-gray-500 mt-1">
                   Segundo signatário: <strong>{doc.emailSegundo}</strong>
                 </p>
-
                 {doc.signatures.length < 2 && (
                   <div className="mt-2">
                     <button
@@ -158,26 +154,23 @@ const DocumentUpload = ({ docs, setDocs }) => {
                     >
                       📩 Enviar convite para segundo signatário
                     </button>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Aguardando assinatura de: <strong>{doc.emailSegundo}</strong>
-                    </p>
                   </div>
                 )}
               </>
             )}
 
             <button
-              disabled={!walletAddress || alreadySigned || doc.signatures.length >= 2}
+              disabled={!walletAddress || alreadySigned || doc.signatures.length >= totalAssinaturas}
               onClick={() => handleSign(index)}
               className={`mt-4 px-3 py-1 rounded text-sm ${
-                !walletAddress || alreadySigned || doc.signatures.length >= 2
+                !walletAddress || alreadySigned || doc.signatures.length >= totalAssinaturas
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-gray-800 text-white hover:bg-gray-700'
               }`}
             >
               {alreadySigned
                 ? '✔️ Já assinado por você'
-                : doc.signatures.length >= 2
+                : doc.signatures.length >= totalAssinaturas
                 ? '🔒 Assinaturas completas'
                 : '✍️ Assinar Documento'}
             </button>
