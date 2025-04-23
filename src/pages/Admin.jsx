@@ -1,3 +1,4 @@
+// Admin.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
@@ -105,7 +106,9 @@ const Admin = () => {
           </button>
         </div>
 
-        {documentos.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-gray-500 dark:text-gray-300">Carregando documentos...</p>
+        ) : documentos.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-300">Nenhum documento encontrado.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
