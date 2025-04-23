@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// ValidarDocumento.jsx
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
@@ -14,7 +15,7 @@ const ValidarDocumento = () => {
   const { hash } = useParams();
   const [documento, setDocumento] = useState(null);
   const [loading, setLoading] = useState(true);
-  const cardRef = React.useRef();
+  const cardRef = useRef();
   const { walletAddress } = useWallet();
 
   useEffect(() => {
@@ -137,7 +138,7 @@ const ValidarDocumento = () => {
                 onClick={handleSign}
                 className="bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition"
               >
-                ✍️ Assinar Documento
+                ✍️ Assinar como segundo signatário
               </button>
             </div>
           )}
