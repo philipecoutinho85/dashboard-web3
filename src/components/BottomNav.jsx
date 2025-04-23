@@ -21,14 +21,14 @@ const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-700 shadow-inner z-50 sm:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-inner z-50 sm:hidden">
       <div className="flex justify-around items-center text-xs py-2">
         {navItems.map((item, idx) => (
           <Link
             key={idx}
             to={item.to}
             className={`flex flex-col items-center transition ${
-              location.pathname === item.to ? 'text-[#ff385c] font-semibold' : 'text-gray-600 dark:text-gray-300'
+              location.pathname === item.to ? 'text-[#ff385c]' : 'text-gray-600 dark:text-gray-300'
             }`}
           >
             {item.icon}
